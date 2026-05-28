@@ -447,10 +447,18 @@ async def ps_got_wanted(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     swap  = save_swap(
         user,
-        ps["train"], ps["train_name"],
-        ps["coach_type"], ps["coach"],
-        ps["current"], ps["wanted"],
-    )
+        ps["train"],
+        ps["train_name"],
+        ps["coach_type"],
+        ps["coach"],
+
+        ps["current_seat"],
+        ps["current"],
+
+        ps["wanted_seat"],
+        ps["wanted"],
+
+)
     clear_flow(context)
 
     # summary card
