@@ -1,4 +1,4 @@
-:::writing{variant="standard" id="48275"}
+writing{variant="standard" id="62491"}
 from telegram import Update
 from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
 import firebase_admin
@@ -39,13 +39,3 @@ app.add_handler(CommandHandler("start", start))
 print("Bot is running...")
 
 app.run_polling()
-:::
-
----
-
-# IMPORTANT ⚠️
-
-Paste karte waqt:
-❌ ये मत paste करना:
-```text id="x9v3m1"
-```python
