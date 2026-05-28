@@ -5,7 +5,7 @@ from firebase_admin import credentials, db
 import json
 import os
 
-BOT_TOKEN = "YOUR_BOT_TOKEN"
+BOT_TOKEN = "8816672349:AAG41gLQ4DJEz4rwBV-onPJPgQgncRpQqfk"
 
 firebase_key = json.loads(os.getenv("FIREBASE_KEY"))
 
