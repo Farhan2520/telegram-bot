@@ -3,7 +3,7 @@ from telegram.ext import Updater, CommandHandler
 BOT_TOKEN = "8816672349:AAGEH-NWooNMmLHrBlIAzlNk-65hHivvtbk"
 
 def start(update, context):
-update.message.reply_text("Hello Farhan 🔥 SeatSwap Bot Working!")
+    update.message.reply_text("Hello Farhan 🔥 SeatSwap Bot Working!")
 
 updater = Updater(BOT_TOKEN, use_context=True)
 
