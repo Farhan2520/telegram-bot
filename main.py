@@ -7,7 +7,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("SeatSwap Bot Working 🔥")
 
 async def postseat(update: Update, context: ContextTypes.DEFAULT_TYPE):
-await update.message.reply_text("Enter Train Number 🚆")
+    await update.message.reply_text("Enter Train Number 🚆")
 
 app = ApplicationBuilder().token(BOT_TOKEN).build()
 
