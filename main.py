@@ -394,7 +394,7 @@ async def ps_finish(update: Update, context: ContextTypes.DEFAULT_TYPE):
         text += (
             f"🎉 *INSTANT MATCH FOUND!*\n\n"
             f"👤 *{match['name']}* {u_match.get('badge','')}\n"
-            f"{'💎 Premium User\n' if u_match.get('premium') else ''}"
+            f"premium_text = "💎 Premium User\n" if u_match.get("premium") else ""
             f"💺 Has: `{match['current']}`\n"
             f"🔄 Wants: `{match['wanted']}`\n\n"
             f"📩 Contact: {contact}\n\n"
