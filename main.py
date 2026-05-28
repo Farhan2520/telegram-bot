@@ -665,7 +665,7 @@ async def premium_info(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "• ✅ 💎 Premium badge on profile\n"
         "• ✅ Instant match notifications\n"
         "• ✅ Priority support\n\n"
-        "📩 To upgrade, contact: @lootsofdeals\n"
+        "📩 To upgrade, contact: @YourAdminUsername\n"
         "_Coming soon: UPI payment integration!_",
         back_home_kb()
     )
