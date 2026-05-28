@@ -18,8 +18,8 @@ from firebase_admin import credentials, db
 # ─────────────────────────────────────────────
 #  CONFIG
 # ─────────────────────────────────────────────
-BOT_TOKEN  = os.getenv("BOT_TOKEN", "YOUR_BOT_TOKEN_HERE")
-ADMIN_IDS  = [int(x) for x in os.getenv("ADMIN_IDS", "0").split(",") if x.strip().isdigit()]
+BOT_TOKEN  = os.getenv("BOT_TOKEN", "8816672349:AAG41gLQ4DJEz4rwBV-onPJPgQgncRpQqfk")
+ADMIN_IDS  = [int(x) for x in os.getenv("@Farhanquraishi18", "0").split(",") if x.strip().isdigit()]
 
 firebase_key_raw = os.getenv("FIREBASE_KEY")
 FIREBASE_ON = False
