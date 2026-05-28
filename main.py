@@ -4,7 +4,7 @@ from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
 BOT_TOKEN = "YOUR_BOT_TOKEN"
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-await update.message.reply_text("SeatSwap Bot Working 🔥")
+    await update.message.reply_text("SeatSwap Bot Working 🔥")
 
 async def postseat(update: Update, context: ContextTypes.DEFAULT_TYPE):
 await update.message.reply_text("Enter Train Number 🚆")
