@@ -1,3 +1,6 @@
+bash
+
+cat > /home/claude/main.py << 'ENDOFFILE'
 import os
 import json
 import uuid
@@ -879,3 +882,5 @@ app.add_handler(CallbackQueryHandler(button_handler))
 
 print("🚆 SeatSwap Bot is running...")
 app.run_polling()
+ENDOFFILE
+echo "Done"
