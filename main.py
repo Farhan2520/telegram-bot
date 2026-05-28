@@ -388,18 +388,23 @@ async def ps_finish(update: Update, context: ContextTypes.DEFAULT_TYPE):
         f"🔄 Wants: `{wanted}`\n\n"
     )
 
-    if match:
-        u_match  = get_user(match["user_id"])
-        contact  = get_contact_text(match)
-        text += (
-            f"🎉 *INSTANT MATCH FOUND!*\n\n"
-            f"👤 *{match['name']}* {u_match.get('badge','')}\n"
-            premium_text = "💎 Premium User\n" if u_match.get("premium") else ""
-            f"💺 Has: `{match['current']}`\n"
-            f"🔄 Wants: `{match['wanted']}`\n\n"
-            f"📩 Contact: {contact}\n\n"
-            f"_After swapping tap ✅ Confirm below to earn +10 points!_"
-        )
+   if match:
+u_match = get_user(match["user_id"])
+contact = get_contact_text(match)
+
+```
+premium_text = "💎 Premium User\n" if u_match.get("premium") else ""
+
+text += (
+    f"🎉 *INSTANT MATCH FOUND!*\n\n"
+    f"👤 *{match['name']}* {u_match.get('badge','')}\n"
+    f"{premium_text}"
+    f"💺 Has: `{match['current']}`\n"
+    f"🔄 Wants: `{match['wanted']}`\n\n"
+    f"📩 Contact: {contact}\n\n"
+    f"_After swapping tap ✅ Confirm below to earn +10 points!_"
+)
+```
         # Notify matched user
         try:
             my_u      = get_user(user.id)
