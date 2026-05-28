@@ -18,14 +18,14 @@ from firebase_admin import credentials, db
 # ─────────────────────────────────────────────
 #  CONFIG
 # ─────────────────────────────────────────────
-BOT_TOKEN = os.getenv("BOT_TOKEN", "8816672349:AAG41gLQ4DJEz4rwBV-onPJPgQgncRpQqfk")
-ADMIN_IDS = [int(x) for x in os.getenv("@Farhanquraishi18", "0").split(",") if x.strip().isdigit()]
+BOT_TOKEN = os.getenv("BOT_TOKEN")
+ADMIN_IDS = [int(x) for x in os.getenv("ADMIN_IDS", "0").split(",") if x.strip().isdigit()]
 
 # ─────────────────────────────────────────────
 #  FIREBASE INIT + STARTUP CHECK
 # ─────────────────────────────────────────────
 FIREBASE_ON = False
-firebase_key_raw = os.getenv("-----BEGIN PRIVATE KEY-----\nMIIEvAIBADANBgkqhkiG9w0BAQEFAASCBKYwggSiAgEAAoIBAQCsuxVi6n+UPvCE\nM5E2vLBqs2XtIN5dyXLr0f/APLuDajWZBdXoWVCeWsaSc8POr4mXTS9w33LOTcWd\nqxlqZ9Tb3l6KCmXaJE1Jj4DkRH2PX2rzQyhSg5zOxUj6vxg/AAYYKhI0DAug3vuf\no4c5GnjR06jU1aw0eJl81KJbgPRzgMHH8oA4cGW33L64sk6lWqL0QxkPXquRO1kS\nO76DMB+wU/VO4ELGerj+B8KN3qzxOPlpeQI9lXyLwXC2DBd/HsvjU6VkmW+4DEDa\nllYCG16xNL3jMmCRvtH4zwV68qdfmk5RkodWz9WgSXT4UmXM5TnEIiU0zSr6q+Tm\nhgKqCes1AgMBAAECggEAB3Bzn8PplJJaYa3mjZo2VJN0lXAtNj0Fy/t1KEvP/VK0\nIL/5ghfjVZKjde1yS+L6X3pq9jxKxvEJYhHwrAkb8o/topncivbgdPAvNQWbInM8\nWWJK01+eP7c2U7BVGb+FQ6yqMIoqmmDdgExhd6I40marNpFw/iiJ3xsPAWG42tw+\naSwX6YixhygP20lH/Fi64u2Imv2KS0xj8z228GCrMTOG40E3hHe/lqvjuo3v8esf\nKvby5mRGjDgmnnz1BADJIZOzQjietUmTzDrOJT1K99sYcuqZalbj4dDmS9LtFZ+1\n5cef3M1FmpvCu8vOcZLoV4jLxPYxrwjudzgwlS3YcQKBgQDWKsxIfz131Al+WSXG\nTln8OW7S3iNVxsnGs62RaTve0ZkjQDn841IhjTcEZFq1fxShn+424WxYV76m2Axu\nsM/u6qUL5Fp5I2ZxpTmURe0oktzqg/58l9GXQM+C73zoG6REBhy/lECZka5Im+JJ\n0QRLN1KbtZrVnGKJze2Whd07xQKBgQDOeE2gHJvDCqh2xHeYPPAT8")
+firebase_key_raw = os.getenv("FIREBASE_KEY")
 
 if firebase_key_raw:
     try:
