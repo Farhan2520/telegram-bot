@@ -1,4 +1,3 @@
-writing{variant="standard" id="62491"}
 from telegram import Update
 from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
 import firebase_admin
