@@ -1,17 +1,16 @@
-from telegram.ext import Updater, CommandHandler
+from telegram import Update
+from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
+import os
 
 BOT_TOKEN = "8816672349:AAG41gLQ4DJEz4rwBV-onPJPgQgncRpQqfk"
 
-def start(update, context):
-    update.message.reply_text("Hello Farhan 🔥 SeatSwap Bot Working!")
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+await update.message.reply_text("Hello Farhan 🔥 SeatSwap Bot Working!")
 
-updater = Updater(BOT_TOKEN, use_context=True)
+app = ApplicationBuilder().token(BOT_TOKEN).build()
 
-dp = updater.dispatcher
-
-dp.add_handler(CommandHandler("start", start))
+app.add_handler(CommandHandler("start", start))
 
 print("Bot is running...")
 
-updater.start_polling()
-updater.idle()
+app.run_polling()
