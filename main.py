@@ -24,9 +24,9 @@ context.user_data["train"] = update.message.text
     await update.message.reply_text("Enter Coach 🚉")
 return COACH
 
-async def coach(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    async def coach(update: Update, context: ContextTypes.DEFAULT_TYPE):
 context.user_data["coach"] = update.message.text
-    await update.message.reply_text("Enter Current Seat 💺")
+await update.message.reply_text("Enter Current Seat 💺")
 return CURRENT_SEAT
 
 async def current_seat(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -35,10 +35,9 @@ context.user_data["current"] = update.message.text
 return WANTED_SEAT
 
 async def wanted_seat(update: Update, context: ContextTypes.DEFAULT_TYPE):
-
-```
 context.user_data["wanted"] = update.message.text
 
+```
     await update.message.reply_text(
     f"Seat Posted 🚀\n\n"
     f"Train: {context.user_data['train']}\n"
