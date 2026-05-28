@@ -394,7 +394,7 @@ async def ps_finish(update: Update, context: ContextTypes.DEFAULT_TYPE):
         text += (
             f"🎉 *INSTANT MATCH FOUND!*\n\n"
             f"👤 *{match['name']}* {u_match.get('badge','')}\n"
-            f"💎 Premium User\n" if u_match.get("premium") else ""
+            premium_text = "💎 Premium User\n" if u_match.get("premium") else ""
             f"💺 Has: `{match['current']}`\n"
             f"🔄 Wants: `{match['wanted']}`\n\n"
             f"📩 Contact: {contact}\n\n"
@@ -665,7 +665,7 @@ async def premium_info(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "• ✅ 💎 Premium badge on profile\n"
         "• ✅ Instant match notifications\n"
         "• ✅ Priority support\n\n"
-        "📩 To upgrade, contact: @YourAdminUsername\n"
+        "📩 To upgrade, contact: @lootsofdeals\n"
         "_Coming soon: UPI payment integration!_",
         back_home_kb()
     )
