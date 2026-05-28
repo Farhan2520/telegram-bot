@@ -7,6 +7,9 @@ ContextTypes,
 
 BOT_TOKEN = "8816672349:AAG41gLQ4DJEz4rwBV-onPJPgQgncRpQqfk"
 
+async def postseat(update: Update, context: ContextTypes.DEFAULT_TYPE):
+await update.message.reply_text("Enter Train Number 🚆")
+
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("SeatSwap Bot Working 🔥")
 
