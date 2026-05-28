@@ -179,7 +179,18 @@ def get_all_swaps():
 def user_swap(uid):
     return next((v for v in get_all_swaps().values() if v.get("user_id")==uid), None)
 
-def save_swap(user, train, train_name, coach_type, coach, current, wanted):
+def save_swap(
+user,
+train,
+train_name,
+coach_type,
+coach,
+current_seat,
+current,
+wanted_seat,
+wanted
+):
+
     sid = str(uuid.uuid4())[:8]
     # remove old request
     for k,v in get_all_swaps().items():
@@ -191,7 +202,9 @@ def save_swap(user, train, train_name, coach_type, coach, current, wanted):
         "badge": u.get("badge", get_badge(0)),
         "train": train, "train_name": train_name,
         "coach_type": coach_type, "coach": coach,
+        "current_seat": current_seat,
         "current": current, "wanted": wanted,
+        "wanted_seat": wanted_seat,
         "status": "active",
         "timestamp": datetime.now().strftime("%d %b %Y %I:%M %p"),
     }
