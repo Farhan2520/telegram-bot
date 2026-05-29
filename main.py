@@ -246,7 +246,11 @@ BERTH_EMOJI = {
 BADGES = [(0,"🌱","Newcomer"),(3,"🎫","Regular Traveler"),
           (10,"⭐","Trusted Member"),(25,"🔰","Expert Swapper"),(50,"👑","Seat Master")]
 
-def get_badge(n):
+def get_badge(n, uid=None):
+    if uid:
+        u=fb_get(f"users/{uid}")
+        if u and u.get("verified") and u.get("verified_badge"):
+            return u["verified_badge"]
     b = BADGES[0]
     for lvl in BADGES:
         if n >= lvl[0]: b = lvl
@@ -384,6 +388,24 @@ T = {
     "bn":"🎉 *সওয়াপ নিশ্চিত!*\n\n+10 pts  |  মোট: *{pts}* pts\nব্যাজ: *{badge}*\n\n{bar}",
     "ur":"🎉 *سویپ کنفرم!*\n\n+10 pts  |  کل: *{pts}* pts\nبیج: *{badge}*\n\n{bar}",
 },
+"feedback_prompt":{
+    "en":"💬 *Send Feedback*\n\nWrite your message, suggestion or problem.\nIt will be sent directly to the admin:",
+    "hi":"💬 *फ़ीडबैक भेजें*\n\nअपना संदेश, सुझाव या समस्या लिखें।\nयह सीधे एडमिन को जाएगा:",
+    "bn":"💬 *ফিডব্যাক পাঠান*\n\nআপনার বার্তা, পরামর্শ বা সমস্যা লিখুন।\nএটি সরাসরি অ্যাডমিনের কাছে যাবে:",
+    "ur":"💬 *فیڈبیک بھیجیں*\n\nاپنا پیغام، مشورہ یا مسئلہ لکھیں۔\nیہ براہ راست ایڈمن کو جائے گا:",
+},
+"feedback_sent":{
+    "en":"✅ *Feedback sent!*\nThank you. Admin will review it.",
+    "hi":"✅ *फ़ीडबैक भेज दिया!*\nशुक्रिया। एडमिन देखेंगे।",
+    "bn":"✅ *ফিডব্যাক পাঠানো হয়েছে!*\nধন্যবাদ। অ্যাডমিন দেখবেন।",
+    "ur":"✅ *فیڈبیک بھیج دیا!*\nشکریہ۔ ایڈمن دیکھیں گے۔",
+},
+"enter_wanted_seat":{
+    "en":"📝 *Specific seat number wanted?* (Optional)\n\nType the exact seat number you want\n_(Example: `26`, `27`)_\n\nOr tap *Any Seat* if you just want the berth type:",
+    "hi":"📝 *कोई खास सीट नंबर चाहिए?* (वैकल्पिक)\n\nजो सीट नंबर चाहिए वह टाइप करें\n_(उदाहरण: `26`, `27`)_\n\nया *Any Seat* दबाएं:",
+    "bn":"📝 *নির্দিষ্ট সিট নম্বর চাই?* (ঐচ্ছিক)\n\nযে সিট নম্বর চান সেটি লিখুন\n_(উদাহরণ: `26`, `27`)_\n\nঅথবা *Any Seat* চাপুন:",
+    "ur":"📝 *مخصوص سیٹ نمبر چاہیے؟* (اختیاری)\n\nجو سیٹ نمبر چاہیے وہ ٹائپ کریں\n_(مثال: `26`, `27`)_\n\nیا *Any Seat* دبائیں:",
+},
 "help":{
     "en":(
         "❓ *How to use SeatSwap*\n\n"
@@ -474,7 +496,7 @@ def all_swaps(): return fb_get("swaps") or {}
 def my_swap(uid):
     return next((v for v in all_swaps().values() if v.get("user_id")==uid),None)
 
-def save_swap(user,train,tname,ct,coach,seat,cur,want,pnr):
+def save_swap(user,train,tname,ct,coach,seat,cur,want,wanted_seat_num,pnr):
     sid=str(uuid.uuid4())[:8]
     for k,v in all_swaps().items():
         if v.get("user_id")==user.id: fb_del(f"swaps/{k}")
@@ -485,6 +507,7 @@ def save_swap(user,train,tname,ct,coach,seat,cur,want,pnr):
         "badge":u.get("badge",get_badge(0)),
         "train":train,"train_name":tname,"coach_type":ct,
         "coach":coach,"seat":seat,"current":cur,"wanted":want,
+        "wanted_seat_num": wanted_seat_num or "",
         "pnr":pnr or "","status":"active",
         "ts":datetime.now().strftime("%d %b %Y %I:%M %p"),
     }
@@ -501,11 +524,18 @@ def find_match(sw):
     opp={"lower":["upper","middle"],"upper":["lower","middle"],"middle":["lower","upper"],
          "side lower":["side upper"],"side upper":["side lower"]}
     nw=sw["wanted"].lower(); nc=sw["current"].lower()
+    my_seat=str(sw.get("seat",""))
+    my_wsn =str(sw.get("wanted_seat_num",""))
     for k,s in all_swaps().items():
         if s.get("user_id")==sw["user_id"]: continue
         if s.get("train")  !=sw["train"]:   continue
+        their_seat=str(s.get("seat",""))
+        their_wsn =str(s.get("wanted_seat_num",""))
         tw=s.get("wanted","").lower(); tc=s.get("current","").lower()
-        if tw==nc or tw in opp.get(nc,[]) or nw==tc or nw in opp.get(tc,[]): return s
+        berth_match=(tw==nc or tw in opp.get(nc,[]) or nw==tc or nw in opp.get(tc,[]))
+        # Specific seat match boost
+        exact_match=(my_wsn and my_wsn==their_seat) or (their_wsn and their_wsn==my_seat)
+        if exact_match or berth_match: return s
     return None
 
 def award(uid):
@@ -532,15 +562,16 @@ def time_ago(ts):
 # ═══════════════════════════════════════════
 def kb_main_reply(lang="en"):
     lbl = {
-        "en":["🔄 Post Swap","🔍 Find Swap","📋 My Request","👤 Profile","🌐 Language","❓ Help"],
-        "hi":["🔄 स्वैप करें","🔍 खोजें","📋 मेरा अनुरोध","👤 प्रोफ़ाइल","🌐 भाषा","❓ मदद"],
-        "bn":["🔄 পোস্ট করুন","🔍 খুঁজুন","📋 আমার অনুরোধ","👤 প্রোফাইল","🌐 ভাষা","❓ সাহায্য"],
-        "ur":["🔄 پوسٹ کریں","🔍 تلاش","📋 میری درخواست","👤 پروفائل","🌐 زبان","❓ مدد"],
-    }.get(lang,["🔄 Post Swap","🔍 Find Swap","📋 My Request","👤 Profile","🌐 Language","❓ Help"])
+        "en":["🔄 Post Swap","🔍 Find Swap","📋 My Request","👤 Profile","🌐 Language","❓ Help","💬 Feedback"],
+        "hi":["🔄 स्वैप करें","🔍 खोजें","📋 मेरा अनुरोध","👤 प्रोफ़ाइल","🌐 भाषा","❓ मदद","💬 फ़ीडबैक"],
+        "bn":["🔄 পোস্ট করুন","🔍 খুঁজুন","📋 আমার অনুরোধ","👤 প্রোফাইল","🌐 ভাষা","❓ সাহায্য","💬 ফিডব্যাক"],
+        "ur":["🔄 پوسٹ کریں","🔍 تلاش","📋 میری درخواست","👤 پروفائل","🌐 زبان","❓ مدد","💬 فیڈبیک"],
+    }.get(lang,["🔄 Post Swap","🔍 Find Swap","📋 My Request","👤 Profile","🌐 Language","❓ Help","💬 Feedback"])
     return ReplyKeyboardMarkup([
         [lbl[0],lbl[1]],
         [lbl[2],lbl[3]],
         [lbl[4],lbl[5]],
+        [lbl[6]],
     ], resize_keyboard=True)
 
 def kb_back_home():
@@ -738,10 +769,16 @@ async def ps_got_wanted(update:Update,context:ContextTypes.DEFAULT_TYPE):
     await update.callback_query.answer()
     uid=update.effective_user.id; lang=user_lang(uid)
     context.user_data["ps"]["wanted"]=berth
-    context.user_data["flow"]="ps_pnr"
+    context.user_data["flow"]="ps_wanted_seat_num"
+    ct=context.user_data.get("ps",{}).get("coach_type","SL")
+    mx=COACH_TYPES.get(ct,{}).get("max_seat",72)
+    kb_any=InlineKeyboardMarkup([
+        [InlineKeyboardButton({"en":"✅ Any Seat (just this berth type)","hi":"✅ कोई भी सीट","bn":"✅ যেকোনো সিট","ur":"✅ کوئی بھی سیٹ"}.get(lang,"✅ Any Seat"),callback_data="wsn_any")],
+        [InlineKeyboardButton("⬅️ Back",callback_data="want_back")],
+    ])
     await update.callback_query.edit_message_text(
-        t("enter_pnr",lang),
-        reply_markup=kb_skip(lang),parse_mode="Markdown"
+        t("enter_wanted_seat",lang),
+        reply_markup=kb_any,parse_mode="Markdown"
     )
 
 async def ps_got_pnr(update:Update,context:ContextTypes.DEFAULT_TYPE):
@@ -753,6 +790,63 @@ async def ps_got_pnr(update:Update,context:ContextTypes.DEFAULT_TYPE):
     context.user_data["ps"]["pnr"]=raw
     context.user_data["flow"]=""
     await finish_post(update,context,uid,lang)
+
+async def ps_got_wanted_seat_num_text(update:Update,context:ContextTypes.DEFAULT_TYPE):
+    raw=update.message.text.strip()
+    uid=update.effective_user.id; lang=user_lang(uid)
+    ps=context.user_data.get("ps",{})
+    ct=ps.get("coach_type","SL"); mx=COACH_TYPES.get(ct,{}).get("max_seat",72)
+    if raw.isdigit() and 1<=int(raw)<=mx:
+        ps["wanted_seat_num"]=raw
+        context.user_data["flow"]="ps_pnr"
+        pref_msg = "✅ Preferred seat: *" + raw + "*\n\n" + t("enter_pnr",lang)
+        await update.message.reply_text(
+            pref_msg,
+            reply_markup=kb_skip(lang),parse_mode="Markdown"
+        )
+    else:
+        await update.message.reply_text(
+            f"❌ Enter a valid seat number (1–{mx}) or tap Any Seat.",
+            reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("✅ Any Seat",callback_data="wsn_any")]]),
+            parse_mode="Markdown"
+        )
+
+async def ps_wsn_any(update:Update,context:ContextTypes.DEFAULT_TYPE):
+    await update.callback_query.answer()
+    uid=update.effective_user.id; lang=user_lang(uid)
+    context.user_data["ps"]["wanted_seat_num"]=""
+    context.user_data["flow"]="ps_pnr"
+    await update.callback_query.edit_message_text(
+        t("enter_pnr",lang),reply_markup=kb_skip(lang),parse_mode="Markdown"
+    )
+
+async def feedback_start(update:Update,context:ContextTypes.DEFAULT_TYPE):
+    uid=update.effective_user.id; lang=user_lang(uid)
+    context.user_data["flow"]="feedback"
+    await rply(update,t("feedback_prompt",lang),
+        InlineKeyboardMarkup([[InlineKeyboardButton("🏠 Cancel",callback_data="flow_home")]]))
+
+async def feedback_got_msg(update:Update,context:ContextTypes.DEFAULT_TYPE):
+    uid=update.effective_user.id; lang=user_lang(uid)
+    msg=update.message.text; u=get_user(uid)
+    context.user_data["flow"]=""
+    # Store feedback
+    fb_set(f"feedback/{uid}_{int(datetime.now().timestamp())}", {
+        "user_id":uid,"name":u.get("name",""),"username":u.get("username",""),
+        "message":msg,"ts":datetime.now().strftime("%d %b %Y %I:%M %p"),
+    })
+    # Notify all admins
+    for aid in ADMIN_IDS:
+        try:
+            uname=f"@{u.get('username','')}" if u.get("username") else f"ID:{uid}"
+            await update.get_bot().send_message(
+                chat_id=aid,
+                text=f"📩 *New Feedback*\n\n👤 {u.get('name','')} ({uname})\n\n💬 {msg}",
+                parse_mode="Markdown"
+            )
+        except: pass
+    await update.message.reply_text(t("feedback_sent",lang),
+        reply_markup=kb_back_home(),parse_mode="Markdown")
 
 async def ps_skip_pnr(update:Update,context:ContextTypes.DEFAULT_TYPE):
     await update.callback_query.answer()
@@ -766,10 +860,12 @@ async def finish_post(update:Update,context:ContextTypes.DEFAULT_TYPE,uid,lang):
     pnr=ps.get("pnr","")
     pnr_line=f"🎫 PNR: `{pnr}`" if pnr else ""
     sw=save_swap(user,ps["train"],ps["train_name"],ps["coach_type"],
-                 ps["coach"],ps["seat"],ps["current"],ps["wanted"],pnr)
+                 ps["coach"],ps["seat"],ps["current"],ps["wanted"],
+                 ps.get("wanted_seat_num",""),pnr)
     text=t("swap_posted",lang,
            train=ps["train"],tname=ps["train_name"],coach=ps["coach"],
-           seat=ps["seat"],cur=ps["current"],want=ps["wanted"],pnr_line=pnr_line)
+           seat=ps["seat"],cur=ps["current"],want=ps["wanted"],pnr_line=pnr_line)+(
+           f"\n🎯 Preferred Seat: *{ps['wanted_seat_num']}*" if ps.get("wanted_seat_num") else "")
     match=find_match(sw)
     if match:
         um=get_user(match["user_id"]); cl=contact_link(match)
@@ -848,8 +944,9 @@ async def show_coach(update:Update,context:ContextTypes.DEFAULT_TYPE):
     rows=[]
     for i,req in enumerate(results,1):
         pnr_line=f"\n🎫 PNR: `{req['pnr']}`" if req.get("pnr") else ""
+        wsn_line=f" (wants seat *{req['wanted_seat_num']}*)" if req.get("wanted_seat_num") else ""
         text+=(f"*#{i}  {req['name']}*  {req.get('badge','🌱 Newcomer')}\n"
-               f"💺 Seat *{req.get('seat','?')}* → *{req['current']}*  →  🔄 *{req['wanted']}*{pnr_line}\n"
+               f"💺 Seat *{req.get('seat','?')}* → *{req['current']}*  →  🔄 *{req['wanted']}*{wsn_line}{pnr_line}\n"
                f"✅ {get_user(req['user_id']).get('swaps_done',0)} swaps  ·  🕐 {time_ago(req.get('ts',''))}\n"
                f"──────────────────\n")
         rows.append([
@@ -1114,6 +1211,48 @@ async def admin_userinfo(update:Update,context:ContextTypes.DEFAULT_TYPE):
         parse_mode="Markdown"
     )
 
+async def admin_verify(update:Update,context:ContextTypes.DEFAULT_TYPE):
+    if not is_admin(update.effective_user.id):
+        await update.message.reply_text("❌ Not authorized."); return
+    if len(context.args)<1:
+        await update.message.reply_text("Usage: /verify <user_id> [custom_badge_emoji]\nExample: /verify 123456789 🌟\nDefault: ✅ Verified"); return
+    uid=int(context.args[0])
+    custom=context.args[1] if len(context.args)>1 else "✅"
+    badge_name=f"{custom} Verified"
+    fb_upd(f"users/{uid}",{"verified":True,"verified_badge":badge_name,"badge":badge_name})
+    u=get_user(uid)
+    await update.message.reply_text(f"✅ User `{uid}` ({u.get('name','')}) given badge: *{badge_name}*",parse_mode="Markdown")
+    try:
+        await context.bot.send_message(
+            chat_id=uid,
+            text=f"🎉 *Congratulations!*\n\nYou've been given a special badge: *{badge_name}*\n\nKeep swapping! 🚆",
+            parse_mode="Markdown"
+        )
+    except: pass
+
+async def admin_unverify(update:Update,context:ContextTypes.DEFAULT_TYPE):
+    if not is_admin(update.effective_user.id):
+        await update.message.reply_text("❌ Not authorized."); return
+    if not context.args:
+        await update.message.reply_text("Usage: /unverify <user_id>"); return
+    uid=int(context.args[0])
+    u=get_user(uid); sd=u.get("swaps_done",0)
+    fb_upd(f"users/{uid}",{"verified":False,"verified_badge":"","badge":get_badge(sd)})
+    await update.message.reply_text(f"✅ Verified badge removed from user `{uid}`.",parse_mode="Markdown")
+
+async def admin_feedbacks(update:Update,context:ContextTypes.DEFAULT_TYPE):
+    if not is_admin(update.effective_user.id):
+        await update.message.reply_text("❌ Not authorized."); return
+    feedbacks=fb_get("feedback") or {}
+    if not feedbacks:
+        await update.message.reply_text("📭 No feedbacks yet."); return
+    items=sorted(feedbacks.items(),key=lambda x:x[1].get("ts",""),reverse=True)[:5]
+    text="📩 *Last 5 Feedbacks*\n\n"
+    for k,v in items:
+        uname=f"@{v.get('username','')}" if v.get("username") else f"ID:{v.get('user_id','')}"
+        text+=f"👤 *{v.get('name','')}* ({uname})\n💬 {v.get('message','')}\n🕐 {v.get('ts','')}\n\n"
+    await update.message.reply_text(text,parse_mode="Markdown")
+
 async def admin_deleteswap(update:Update,context:ContextTypes.DEFAULT_TYPE):
     if not is_admin(update.effective_user.id):
         await update.message.reply_text("❌ Not authorized."); return
@@ -1142,6 +1281,8 @@ async def handle_msg(update:Update,context:ContextTypes.DEFAULT_TYPE):
     flow=context.user_data.get("flow","")
 
     # ReplyKeyboard menu buttons
+    if "Feedback" in text or "फ़ीडबैक" in text or "ফিডব্যাক" in text or "فیڈبیک" in text:
+        await feedback_start(update,context); return
     if "Post Swap" in text or "स्वैप करें" in text or "পোস্ট করুন" in text or "پوسٹ" in text:
         await ps_start(update,context); return
     if "Find Swap" in text or "खोजें" in text or "খুঁজুন" in text or "تلاش" in text:
@@ -1159,7 +1300,9 @@ async def handle_msg(update:Update,context:ContextTypes.DEFAULT_TYPE):
     if   flow=="ps_train":   await ps_got_train(update,context)
     elif flow=="ps_seat":    await ps_got_seat(update,context)
     elif flow=="ps_pnr":     await ps_got_pnr(update,context)
-    elif flow=="search_train": await search_got_train(update,context)
+    elif flow=="search_train":    await search_got_train(update,context)
+    elif flow=="ps_wanted_seat_num": await ps_got_wanted_seat_num_text(update,context)
+    elif flow=="feedback":         await feedback_got_msg(update,context)
     else:
         lang=user_lang(uid)
         await update.message.reply_text(
@@ -1181,6 +1324,8 @@ async def button_handler(update:Update,context:ContextTypes.DEFAULT_TYPE):
     elif data=="flow_profile":   await profile(update,context)
     elif data=="flow_help":      await help_cmd(update,context)
     elif data=="cancelswap":     await cancel_swap(update,context)
+    elif data=="flow_feedback":   await feedback_start(update,context)
+    elif data=="wsn_any":         await ps_wsn_any(update,context)
 
     # Language
     elif data.startswith("lang_"): await set_lang(update,context)
@@ -1265,6 +1410,7 @@ async def post_init(app):
         BotCommand("myrequest", "📋 My active swap request"),
         BotCommand("profile",   "👤 My profile & badges"),
         BotCommand("language",  "🌐 Change language"),
+        BotCommand("feedback",  "💬 Send feedback to admin"),
         BotCommand("myid",      "🔑 Get my Telegram ID"),
         BotCommand("cancel",    "❌ Cancel current action"),
         BotCommand("help",      "❓ How to use SeatSwap"),
@@ -1298,6 +1444,10 @@ app.add_handler(CommandHandler("unban",       admin_unban))
 app.add_handler(CommandHandler("broadcast",   admin_broadcast))
 app.add_handler(CommandHandler("userinfo",    admin_userinfo))
 app.add_handler(CommandHandler("deleteswap",  admin_deleteswap))
+app.add_handler(CommandHandler("verify",      admin_verify))
+app.add_handler(CommandHandler("unverify",    admin_unverify))
+app.add_handler(CommandHandler("feedbacks",   admin_feedbacks))
+app.add_handler(CommandHandler("feedback",    feedback_start))
 app.add_error_handler(error_handler)
 
 print("🚆 SeatSwap Bot starting...")
