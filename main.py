@@ -18,6 +18,7 @@ from firebase_admin import credentials, db
 # ═══════════════════════════════════════════
 BOT_TOKEN  = os.getenv("BOT_TOKEN", "YOUR_BOT_TOKEN")
 ADMIN_IDS  = [int(x) for x in os.getenv("ADMIN_IDS","0").split(",") if x.strip().isdigit()]
+ADMIN_UNAMES = [x.strip().lower().lstrip("@") for x in os.getenv("ADMIN_USERNAMES","").split(",") if x.strip()]
 
 # ═══════════════════════════════════════════
 #  FIREBASE
@@ -866,13 +867,62 @@ async def confirm_swap(update:Update,context:ContextTypes.DEFAULT_TYPE):
     uid=update.effective_user.id; lang=user_lang(uid)
     sid=update.callback_query.data.replace("confirm_","")
     key=f"confirmed/{uid}_{sid}"
+
     if fb_get(key):
-        await update.callback_query.edit_message_text("✅ Already confirmed!",reply_markup=kb_back_home()); return
-    fb_set(key,True); sd,pts=award(uid)
-    await update.callback_query.edit_message_text(
-        t("confirmed",lang,pts=pts,badge=get_badge(sd),bar=progress_bar(sd)),
-        reply_markup=kb_back_home(),parse_mode="Markdown"
-    )
+        await update.callback_query.edit_message_text(
+            "✅ You already confirmed this swap!",reply_markup=kb_back_home()); return
+
+    # Mark this user confirmed
+    fb_set(key, True)
+
+    # Check how many parties confirmed for this swap_id
+    all_confirmed = fb_get("confirmed") or {}
+    confirmed_parties = [k for k in all_confirmed if k.endswith(f"_{sid}")]
+    count = len(confirmed_parties)
+
+    if count >= 2:
+        # BOTH confirmed → award points to both
+        sd,pts = award(uid)
+        # Find the other party and award them too
+        for ck in confirmed_parties:
+            other_uid_str = ck.replace(f"_{sid}","")
+            try:
+                other_uid = int(other_uid_str)
+                if other_uid != uid:
+                    o_sd, o_pts = award(other_uid)
+                    o_lang = user_lang(other_uid)
+                    try:
+                        await context.bot.send_message(
+                            chat_id=other_uid,
+                            text=t("confirmed",o_lang,pts=o_pts,badge=get_badge(o_sd),bar=progress_bar(o_sd)),
+                            parse_mode="Markdown"
+                        )
+                    except: pass
+            except: pass
+
+        # Mark swap as done in DB
+        fb_set(f"swap_done/{sid}", {
+            "completed_at": datetime.now().strftime("%d %b %Y %I:%M %p"),
+            "parties": confirmed_parties,
+        })
+
+        await update.callback_query.edit_message_text(
+            t("confirmed",lang,pts=pts,badge=get_badge(sd),bar=progress_bar(sd)),
+            reply_markup=kb_back_home(),parse_mode="Markdown"
+        )
+    else:
+        # Only 1 party confirmed so far
+        wait_msg = {
+            "en": "⏳ *Your confirmation saved!*\n\nWaiting for the other person to also confirm.\nPoints will be awarded to *both* once they confirm too!",
+            "hi": "⏳ *आपकी पुष्टि सेव हो गई!*\n\nदूसरे व्यक्ति की पुष्टि का इंतजार है।\nदोनों की पुष्टि होने पर पॉइंट मिलेंगे!",
+            "bn": "⏳ *আপনার নিশ্চিতকরণ সেভ হয়েছে!*\n\nঅন্য ব্যক্তির নিশ্চিতকরণের অপেক্ষায়।\nদুজন নিশ্চিত করলেই পয়েন্ট মিলবে!",
+            "ur": "⏳ *آپ کی تصدیق محفوظ!*\n\nدوسرے شخص کی تصدیق کا انتظار ہے۔\nدونوں کی تصدیق پر پوائنٹ ملیں گے!",
+        }.get(lang, "⏳ *Confirmation saved!*\n\nWaiting for the other person to confirm too.\nPoints awarded to both once they confirm!")
+
+        await update.callback_query.edit_message_text(
+            wait_msg,
+            reply_markup=kb_back_home(),parse_mode="Markdown"
+        )
 
 # ═══════════════════════════════════════════
 #  REPORT
@@ -963,7 +1013,11 @@ async def my_id(update:Update,context:ContextTypes.DEFAULT_TYPE):
 # ═══════════════════════════════════════════
 #  ADMIN COMMANDS
 # ═══════════════════════════════════════════
-def is_admin(uid): return uid in ADMIN_IDS
+def is_admin(uid):
+    if uid in ADMIN_IDS: return True
+    u = get_user(uid)
+    uname = u.get("username","").lower().lstrip("@")
+    return uname in ADMIN_UNAMES if uname else False
 
 async def admin_stats(update:Update,context:ContextTypes.DEFAULT_TYPE):
     if not is_admin(update.effective_user.id):
