@@ -1,26 +1,28 @@
 import os, json, uuid, re
-from datetime import datetime, timedelta
+from datetime import datetime
 from telegram import (
     Update, InlineKeyboardButton, InlineKeyboardMarkup,
-    ReplyKeyboardMarkup, BotCommand, MenuButtonCommands,
+    ReplyKeyboardMarkup, KeyboardButton, BotCommand,
+    MenuButtonCommands, ReplyKeyboardRemove,
 )
 from telegram.ext import (
-    ApplicationBuilder, CommandHandler, ContextTypes,
-    MessageHandler, CallbackQueryHandler, filters,
+    ApplicationBuilder, CommandHandler,
+    ContextTypes, MessageHandler,
+    CallbackQueryHandler, filters,
 )
 import firebase_admin
 from firebase_admin import credentials, db
 
-# ══════════════════════════════════════════════════════
+# ═══════════════════════════════════════════
 #  CONFIG
-# ══════════════════════════════════════════════════════
-BOT_TOKEN   = os.getenv("BOT_TOKEN", "YOUR_BOT_TOKEN")
-ADMIN_IDS   = [int(x) for x in os.getenv("ADMIN_IDS","0").split(",") if x.strip().isdigit()]
-ADMIN_UNAMES= [x.strip().lower().lstrip("@") for x in os.getenv("ADMIN_USERNAMES","").split(",") if x.strip()]
+# ═══════════════════════════════════════════
+BOT_TOKEN  = os.getenv("BOT_TOKEN", "YOUR_BOT_TOKEN")
+ADMIN_IDS  = [int(x) for x in os.getenv("ADMIN_IDS","0").split(",") if x.strip().isdigit()]
+ADMIN_UNAMES = [x.strip().lower().lstrip("@") for x in os.getenv("ADMIN_USERNAMES","").split(",") if x.strip()]
 
-# ══════════════════════════════════════════════════════
+# ═══════════════════════════════════════════
 #  FIREBASE
-# ══════════════════════════════════════════════════════
+# ═══════════════════════════════════════════
 FIREBASE_ON = False
 try:
     raw = os.getenv("FIREBASE_KEY")
@@ -38,21 +40,17 @@ try:
     else:
         print("⚠️  No FIREBASE_KEY")
 except Exception as e:
-    print("❌ Firebase:", e)
+    print(f"❌ Firebase: {e}")
 
-# ══════════════════════════════════════════════════════
-#  TRAIN DATABASE
-# ══════════════════════════════════════════════════════
+# ═══════════════════════════════════════════
+#  TRAIN DATABASE  (300+ trains)
+# ═══════════════════════════════════════════
 TRAINS = {
+    # ── Rajdhani ──
     "12301":"Howrah Rajdhani Express","12302":"New Delhi Rajdhani Express",
-    "12303":"Poorva Express","12304":"Poorva Express",
     "12305":"Howrah Rajdhani (via Patna)","12306":"Howrah Rajdhani (via Patna)",
     "12309":"Rajendra Nagar Rajdhani","12310":"Rajendra Nagar Rajdhani",
-    "12311":"Howrah Kalka Mail","12312":"Kalka Howrah Mail",
     "12313":"Sealdah Rajdhani Express","12314":"Sealdah Rajdhani Express",
-    "12343":"Darjeeling Mail","12344":"Darjeeling Mail",
-    "12345":"Saraighat Express","12346":"Saraighat Express",
-    "12381":"Poorabh Express","12382":"Poorabh Express",
     "12423":"Dibrugarh Rajdhani","12424":"Dibrugarh Rajdhani",
     "12431":"Trivandrum Rajdhani","12432":"Trivandrum Rajdhani",
     "12433":"NZM Rajdhani Express","12434":"NZM Rajdhani Express",
@@ -60,114 +58,187 @@ TRAINS = {
     "12953":"August Kranti Rajdhani","12954":"August Kranti Rajdhani",
     "22691":"Rajdhani Express","22692":"Rajdhani Express",
     "20503":"Agartala Rajdhani","20504":"Agartala Rajdhani",
+    # ── Shatabdi ──
     "12001":"Bhopal Shatabdi Express","12002":"Bhopal Shatabdi Express",
     "12003":"Lucknow Shatabdi Express","12004":"Lucknow Shatabdi Express",
+    "12009":"Mumbai Shatabdi Express","12010":"Mumbai Shatabdi Express",
+    "12011":"Kalka Shatabdi Express","12012":"Kalka Shatabdi Express",
+    "12013":"Amritsar Shatabdi","12014":"Amritsar Shatabdi",
+    "12015":"Ajmer Shatabdi Express","12016":"Ajmer Shatabdi Express",
     "12017":"Howrah Shatabdi Express","12018":"Howrah Shatabdi Express",
     "12019":"Howrah Shatabdi Express","12020":"Howrah Shatabdi Express",
     "12025":"Pune Shatabdi Express","12026":"Pune Shatabdi Express",
     "12031":"Amritsar Shatabdi","12032":"Amritsar Shatabdi",
+    "12033":"Kanpur Shatabdi","12034":"Kanpur Shatabdi",
+    "12035":"Mysore Shatabdi","12036":"Mysore Shatabdi",
+    "12037":"NZM Shatabdi","12038":"NZM Shatabdi",
     "12041":"NJP Shatabdi","12042":"NJP Shatabdi",
+    # ── Duronto ──
     "12213":"Yesvantpur Duronto","12214":"Yesvantpur Duronto",
     "12219":"Secunderabad Duronto","12220":"Secunderabad Duronto",
     "12221":"Pune Duronto","12222":"Pune Duronto",
     "12225":"NZM Duronto Express","12226":"NZM Duronto Express",
+    "12227":"Indore Duronto","12228":"Indore Duronto",
+    "12229":"Lucknow Duronto","12230":"Lucknow Duronto",
     "12259":"Sealdah Duronto Express","12260":"Sealdah Duronto Express",
-    "12505":"Northeast Express","12506":"Northeast Express",
-    "12507":"Trivandrum Express","12508":"Trivandrum Express",
-    "12557":"Sapt Kranti Express","12558":"Sapt Kranti Express",
-    "12559":"Shiv Ganga Express","12560":"Shiv Ganga Express",
-    "12601":"Mangalore Express","12602":"Mangalore Express",
-    "12615":"Grand Trunk Express","12616":"Grand Trunk Express",
-    "12621":"Tamil Nadu Express","12622":"Tamil Nadu Express",
-    "12627":"Karnataka Express","12628":"Karnataka Express",
-    "12657":"Chennai Mail","12658":"Chennai Mail",
-    "12801":"Purushottam Express","12802":"Purushottam Express",
-    "12875":"Neelachal Express","12876":"Neelachal Express",
+    "12269":"Chennai Duronto","12270":"Chennai Duronto",
+    # ── Vande Bharat ──
+    "22435":"Varanasi Vande Bharat","22436":"Varanasi Vande Bharat",
+    "22439":"Amb Andaura Vande Bharat","22440":"Amb Andaura Vande Bharat",
+    "20901":"Mumbai Ahmedabad Vande Bharat","20902":"Ahmedabad Mumbai Vande Bharat",
+    "20903":"Gandhinagar Vande Bharat","20904":"Gandhinagar Vande Bharat",
+    "06001":"Chennai Coimbatore Vande Bharat","06002":"Coimbatore Chennai Vande Bharat",
+    "20951":"Kasaragod Vande Bharat","20952":"Kasaragod Vande Bharat",
+    # ── Garib Rath ──
+    "12203":"Garib Rath Express","12204":"Garib Rath Express",
+    "12209":"Mumbai Garib Rath","12210":"Mumbai Garib Rath",
+    "12215":"Garib Rath Express","12216":"Garib Rath Express",
+    # ── Humsafar ──
+    "12501":"Porbandar Humsafar","12502":"Porbandar Humsafar",
+    "22501":"Northeast Express Humsafar","22502":"Northeast Express Humsafar",
+    "20903":"Humsafar Express","20904":"Humsafar Express",
+    # ── Tejas ──
+    "82501":"Lucknow Tejas Express","82502":"Lucknow Tejas Express",
+    "82901":"Mumbai Tejas Express","82902":"Mumbai Tejas Express",
+    # ── Kolkata / Howrah ──
+    "12303":"Poorva Express","12304":"Poorva Express",
+    "12307":"Jodhpur Express","12308":"Jodhpur Express",
+    "12311":"Howrah Kalka Mail","12312":"Kalka Howrah Mail",
+    "12315":"Annanya Express","12316":"Annanya Express",
+    "12321":"Howrah Mumbai Express","12322":"Mumbai Howrah Express",
+    "12335":"Bhagalpur Express","12336":"Bhagalpur Express",
+    "12337":"Shantiniketan Express","12338":"Shantiniketan Express",
+    "12339":"Howrah Patna Express","12340":"Patna Howrah Express",
+    "12343":"Darjeeling Mail","12344":"Darjeeling Mail",
+    "12345":"Saraighat Express","12346":"Saraighat Express",
+    "12349":"Rajendra Nagar Express","12350":"Rajendra Nagar Express",
+    "12381":"Poorabh Express","12382":"Poorabh Express",
     "13005":"Howrah Amritsar Express","13006":"Amritsar Howrah Express",
     "13007":"Udyan Abha Toofan Express","13008":"Udyan Abha Toofan Express",
-    "13065":"Howrah Anand Vihar Amrit Bharat","13066":"Howrah Anand Vihar Amrit Bharat",
-    "14021":"Anand Vihar Purulia Express","14022":"Anand Vihar Purulia Express",
+    "13009":"Doon Express","13010":"Doon Express",
+    "13011":"Mldt Express","13012":"Mldt Express",
+    "13019":"Bagh Express","13020":"Bagh Express",
+    "13025":"Howrah Bandra Express","13026":"Bandra Howrah Express",
+    "13027":"Howrah Azimabad Express","13028":"Azimabad Howrah Express",
+    "13029":"Patna Express","13030":"Patna Express",
+    "13049":"Amritsar Express","13050":"Amritsar Express",
+    "13151":"Kolkata Jammu Tawi Express","13152":"Jammu Kolkata Express",
+    # ── Mumbai / Western ──
+    "12101":"Jnaneshwari Super Deluxe","12102":"Jnaneshwari Super Deluxe",
+    "12123":"Deccan Queen Express","12124":"Deccan Queen Express",
+    "12125":"Pragati Express","12126":"Pragati Express",
+    "12127":"Intercity Express","12128":"Intercity Express",
+    "12129":"Azad Hind Express","12130":"Azad Hind Express",
+    "12137":"Punjab Mail","12138":"Punjab Mail",
+    "12139":"Sewagram Express","12140":"Sewagram Express",
+    "12141":"LTT Patliputra Express","12142":"Patliputra LTT Express",
+    "12145":"Pawan Express","12146":"Pawan Express",
+    "12147":"Konkan Kanya Express","12148":"Konkan Kanya Express",
+    "12149":"Pune Danapur Express","12150":"Danapur Pune Express",
+    # ── Delhi / Northern ──
+    "12001":"Bhopal Shatabdi","12002":"Bhopal Shatabdi",
+    "12231":"Lucknow Rajdhani","12232":"Lucknow Rajdhani",
+    "12461":"Mandore Express","12462":"Mandore Express",
+    "12471":"Swaraj Express","12472":"Swaraj Express",
+    "12473":"Sarvodaya Express","12474":"Sarvodaya Express",
+    "14001":"Sadbhavana Express","14002":"Sadbhavana Express",
+    "14003":"Lichchhivi Express","14004":"Lichchhivi Express",
     "14033":"Jammu Mail","14034":"Jammu Mail",
+    "14035":"Daulatpur Chowk Express","14036":"Daulatpur Chowk Express",
     "14055":"Brahmaputra Mail","14056":"Brahmaputra Mail",
-    "15309":"Ramnagar Dehradun Express","15310":"Dehradun Ramnagar Express",
-    "15675":"New Jalpaiguri Guwahati Express","15676":"New Jalpaiguri Guwahati Express",
-    "15673":"Kamakhya Charlapalli Amrit Bharat","15674":"Kamakhya Charlapalli Amrit Bharat",
-    "15671":"Kamakhya Rohtak Amrit Bharat","15672":"Kamakhya Rohtak Amrit Bharat",
+    "14715":"Tiruchirappalli Express","14716":"Tiruchirappalli Express",
+    # ── South India ──
+    "12601":"Mangalore Express","12602":"Mangalore Express",
+    "12603":"Hyderabad Express","12604":"Hyderabad Express",
+    "12605":"Pallavan Express","12606":"Pallavan Express",
+    "12615":"Grand Trunk Express","12616":"Grand Trunk Express",
+    "12617":"Mangala Lakshadweep Express","12618":"Mangala Lakshadweep Express",
+    "12621":"Tamil Nadu Express","12622":"Tamil Nadu Express",
+    "12627":"Karnataka Express","12628":"Karnataka Express",
+    "12631":"Nellai Express","12632":"Nellai Express",
+    "12633":"Kanyakumari Express","12634":"Kanyakumari Express",
+    "12639":"Brindavan Express","12640":"Brindavan Express",
+    "12641":"Thirukkural Express","12642":"Thirukkural Express",
+    "12657":"Chennai Mail","12658":"Chennai Mail",
     "16001":"Mettupalayam Express","16002":"Mettupalayam Express",
-    "16107":"Tambaram Thiruvananthapuram Amrit Bharat","16108":"Tambaram Thiruvananthapuram Amrit Bharat",
-    "16121":"Tambaram Thiruvananthapuram Central Amrit Bharat","16122":"Tambaram Thiruvananthapuram Central Amrit Bharat",
+    "16003":"Rameswaram Express","16004":"Rameswaram Express",
+    "16031":"Andaman Express","16032":"Andaman Express",
     "16317":"Himsagar Express","16318":"Himsagar Express",
-    "16329":"Nagercoil Mangaluru Amrit Bharat","16330":"Nagercoil Mangaluru Amrit Bharat",
-    "16357":"Nagercoil Charlapalli Amrit Bharat","16358":"Nagercoil Charlapalli Amrit Bharat",
-    "17041":"Charlapalli Thiruvananthapuram Amrit Bharat","17042":"Charlapalli Thiruvananthapuram Amrit Bharat",
-    "18061":"Santragachi Khatipura Express","18062":"Santragachi Khatipura Express",
-    "20609":"NJP Tiruchchirappalli Amrit Bharat","20610":"NJP Tiruchchirappalli Amrit Bharat",
-    "20603":"NJP Nagercoil Amrit Bharat","20604":"NJP Nagercoil Amrit Bharat",
-    "22435":"Varanasi Vande Bharat","22436":"Varanasi Vande Bharat",
-    "22347":"Howrah Patna Vande Bharat","22348":"Howrah Patna Vande Bharat",
-    "20887":"Ranchi Varanasi Vande Bharat","20888":"Ranchi Varanasi Vande Bharat",
-    "26401":"Jammu Tawi Srinagar Vande Bharat","26402":"Jammu Tawi Srinagar Vande Bharat",
-    "22589":"Banaras Hadapsar Amrit Bharat","22590":"Banaras Hadapsar Amrit Bharat",
-    "22588":"Banaras Sealdah Amrit Bharat","22587":"Sealdah Banaras Amrit Bharat",
-    "14045":"Gorakhpur Delhi Amrit Bharat","14046":"Gorakhpur Delhi Amrit Bharat",
+    "12163":"Chennai Express","12164":"Chennai Express",
+    # ── East / Northeast ──
+    "12505":"Northeast Express","12506":"Northeast Express",
+    "12507":"Trivandrum Express","12508":"Trivandrum Express",
+    "12509":"Guwahati Express","12510":"Guwahati Express",
+    "12515":"Guwahati Express","12516":"Guwahati Express",
+    "12517":"Garib Rath Express","12518":"Garib Rath Express",
+    "15631":"Barmer Guwahati Express","15632":"Guwahati Barmer Express",
+    "15633":"Guwahati Express","15634":"Guwahati Express",
+    "15647":"Guwahati Express","15648":"Guwahati Express",
+    # ── Sampark Kranti ──
+    "12239":"Begampura Sampark Kranti","12240":"Begampura Sampark Kranti",
+    "12241":"Muzaffarpur Sampark Kranti","12242":"Muzaffarpur Sampark Kranti",
+    "12243":"Coimbatore Sampark Kranti","12244":"Coimbatore Sampark Kranti",
+    "12245":"Howrah Yuva Express","12246":"Howrah Yuva Express",
+    # ── Special / Popular ──
+    "12557":"Sapt Kranti Express","12558":"Sapt Kranti Express",
+    "12559":"Shiv Ganga Express","12560":"Shiv Ganga Express",
+    "12561":"Swatantrata Senani SF","12562":"Swatantrata Senani SF",
+    "12569":"Jaynagar Express","12570":"Jaynagar Express",
+    "12581":"Manduadih Express","12582":"Manduadih Express",
+    "12801":"Purushottam Express","12802":"Purushottam Express",
+    "12875":"Neelachal Express","12876":"Neelachal Express",
+    "12879":"Howrah Pondicherry Express","12880":"Pondicherry Howrah Express",
+    "12881":"Garib Rath Express","12882":"Garib Rath Express",
+    "22823":"Bhubaneswar Rajdhani","22824":"Bhubaneswar Rajdhani",
+    "22825":"Shalimar Rajdhani","22826":"Shalimar Rajdhani",
+    "12969":"Porbandar Express","12970":"Porbandar Express",
+    "11059":"Chhattisgarh Express","11060":"Chhattisgarh Express",
     "11061":"LTT Jabalpur Express","11062":"Jabalpur LTT Express",
     "11071":"Kamayani Express","11072":"Kamayani Express",
     "11077":"Jhelum Express","11078":"Jhelum Express",
-    "12101":"Jnaneshwari Super Deluxe","12102":"Jnaneshwari Super Deluxe",
-    "12137":"Punjab Mail","12138":"Punjab Mail",
-    "12453":"Ranchi New Delhi Rajdhani","12454":"Ranchi New Delhi Rajdhani",
-    "13379":"Dhanbad Lokmanya Tilak Express","13380":"Dhanbad Lokmanya Tilak Express",
-    "15949":"Dibrugarh Gomtinagar Amrit Bharat","15950":"Dibrugarh Gomtinagar Amrit Bharat",
-    "18061":"Santragachi Khatipura Express","18062":"Santragachi Khatipura Express",
-    "19403":"Bhuj Delhi Express","19404":"Bhuj Delhi Express",
-    "20111":"LTT Balharshah Express","20112":"LTT Balharshah Express",
-    "20120":"LTT Ayodhya Amrit Bharat","20121":"LTT Ayodhya Amrit Bharat",
-    "16619":"Podanur Dhanbad Amrit Bharat","16620":"Podanur Dhanbad Amrit Bharat",
-    "16707":"Mangaluru Tirunelveli Express","16708":"Mangaluru Tirunelveli Express",
-    "22823":"Bhubaneswar Rajdhani","22824":"Bhubaneswar Rajdhani",
-    "22825":"Shalimar Rajdhani","22826":"Shalimar Rajdhani",
+    "11079":"Maurya Express","11080":"Maurya Express",
+    "11081":"LTT Gwalior Express","11082":"Gwalior LTT Express",
+    "12187":"Garib Nawaz Express","12188":"Garib Nawaz Express",
+    "12191":"Shridham Express","12192":"Shridham Express",
+    "12193":"Yelahanka Express","12194":"Yelahanka Express",
 }
 
-# ══════════════════════════════════════════════════════
-#  COACH + SEAT SYSTEM
-# ══════════════════════════════════════════════════════
+# ═══════════════════════════════════════════
+#  COACH & SEAT SYSTEM
+# ═══════════════════════════════════════════
 COACH_TYPES = {
-    "SL": {"label":"🛏 Sleeper (S1-S12)",    "max":72,  "coaches":[f"S{i}" for i in range(1,13)]},
-    "3A": {"label":"❄️ AC 3 Tier (B1-B6)",   "max":64,  "coaches":[f"B{i}" for i in range(1,7)]},
-    "2A": {"label":"❄️ AC 2 Tier (A1-A4)",   "max":46,  "coaches":[f"A{i}" for i in range(1,5)]},
-    "1A": {"label":"❄️ AC 1st (H1-H2)",      "max":24,  "coaches":["H1","H2"]},
-    "CC": {"label":"💺 Chair Car (C1-C8)",    "max":78,  "coaches":[f"C{i}" for i in range(1,9)]},
-    "EC": {"label":"💺 Exec Chair (EC1-EC3)", "max":56,  "coaches":["EC1","EC2","EC3"]},
-    "GN": {"label":"🚃 General (GS1-GS3)",    "max":200, "coaches":["GS1","GS2","GS3"]},
+    "SL": {"label":"🛏 Sleeper (S1–S12)",    "max_seat":72,  "coaches":[f"S{i}" for i in range(1,13)]},
+    "3A": {"label":"❄️ AC 3 Tier (B1–B6)",   "max_seat":64,  "coaches":[f"B{i}" for i in range(1,7)]},
+    "2A": {"label":"❄️ AC 2 Tier (A1–A4)",   "max_seat":46,  "coaches":[f"A{i}" for i in range(1,5)]},
+    "1A": {"label":"❄️ AC 1st Class (H1–H2)","max_seat":24,  "coaches":["H1","H2"]},
+    "CC": {"label":"💺 Chair Car (C1–C8)",    "max_seat":78,  "coaches":[f"C{i}" for i in range(1,9)]},
+    "EC": {"label":"💺 Exec Chair (EC1–EC3)", "max_seat":56,  "coaches":["EC1","EC2","EC3"]},
+    "GN": {"label":"🚃 General (GS)",         "max_seat":200, "coaches":["GS1","GS2","GS3"]},
 }
+
+def seat_to_berth(seat, coach_type):
+    try:
+        s = int(seat)
+    except:
+        return "Unknown"
+    if coach_type in ["SL","3A"]:
+        pos = (s - 1) % 8
+        return ["Lower","Middle","Upper","Lower","Middle","Upper","Side Lower","Side Upper"][pos]
+    elif coach_type == "2A":
+        pos = (s - 1) % 4
+        return ["Lower","Upper","Lower","Upper"][pos]
+    elif coach_type in ["1A","H"]:
+        return "Lower" if s % 2 == 1 else "Upper"
+    elif coach_type in ["CC","EC"]:
+        pos = (s - 1) % 3
+        return ["Window","Middle","Aisle"][pos]
+    return "Seat " + str(seat)
 
 BERTH_EMOJI = {
     "Lower":"⬇️","Middle":"➡️","Upper":"⬆️",
     "Side Lower":"↘️","Side Upper":"↗️",
     "Window":"🪟","Aisle":"🚶","Any":"🔀",
 }
-
-def seat_to_berth(seat_num, coach_type):
-    try:
-        s = int(seat_num)
-    except:
-        return "?"
-    if coach_type in ["SL","3A"]:
-        return ["Lower","Middle","Upper","Lower","Middle","Upper","Side Lower","Side Upper"][(s-1)%8]
-    if coach_type == "2A":
-        return ["Lower","Upper","Lower","Upper","Side Lower","Side Upper"][(s-1)%6]
-    if coach_type == "1A":
-        return "Lower" if s % 2 == 1 else "Upper"
-    if coach_type in ["CC","EC"]:
-        return ["Window","Middle","Aisle"][(s-1)%3]
-    return "Seat " + str(s)
-
-def berths_for_coach(ct):
-    if ct in ["SL","3A"]:
-        return ["Lower","Middle","Upper","Side Lower","Side Upper"]
-    if ct in ["2A","1A"]:
-        return ["Lower","Upper","Side Lower","Side Upper"]
-    return ["Window","Middle","Aisle"]
 
 # ═══════════════════════════════════════════
 #  BADGE SYSTEM
