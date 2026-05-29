@@ -168,6 +168,3 @@ def berths_for_coach(ct):
     if ct in ["2A","1A"]:
         return ["Lower","Upper","Side Lower","Side Upper"]
     return ["Window","Middle","Aisle"]
-
-SEATSWAP_END
-echo "S1 OK: $(wc -l < /tmp/s1.py) lines"
