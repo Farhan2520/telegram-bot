@@ -642,6 +642,18 @@ async def rply(update: Update, text: str, kb=None):
 # ═══════════════════════════════════════════════════════
 #  /START
 # ═══════════════════════════════════════════════════════
+keyboard = [
+    [
+        InlineKeyboardButton(
+            "📱 Open App",
+            web_app=WebAppInfo(
+                url="https://farhan2520.github.io/telegram-bot/"
+            )
+        )
+    ]
+]
+
+reply_markup = InlineKeyboardMarkup(keyboard)
 async def start(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
     ensure_user(user)
