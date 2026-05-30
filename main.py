@@ -642,9 +642,6 @@ async def rply(update: Update, text: str, kb=None):
 # ═══════════════════════════════════════════════════════
 #  /START
 # ═══════════════════════════════════════════════════════
-from telegram import WebAppInfo
-# Start message mein keyboard add karo:
-InlineKeyboardButton("📱 Open App", web_app=WebAppInfo(url="https://yourusername.github.io/seatswap-miniapp"))
 async def start(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
     ensure_user(user)
@@ -657,7 +654,9 @@ async def start(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
         s("welcome", lang, name=user.first_name) + f"\n\n_{db_ico} DB {'Online' if FIREBASE_ON else 'Offline'}_",
         reply_markup=kb_menu(lang), parse_mode="Markdown"
     )
-
+from telegram import WebAppInfo
+# Start message mein keyboard add karo:
+InlineKeyboardButton("📱 Open App", web_app=WebAppInfo(url="https://yourusername.github.io/seatswap-miniapp"))
 # ═══════════════════════════════════════════════════════
 #  CHANGE SEAT (POST SWAP) FLOW
 # ═══════════════════════════════════════════════════════
