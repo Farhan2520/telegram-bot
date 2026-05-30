@@ -1,6 +1,3 @@
-from telegram import WebAppInfo
-# Start message mein keyboard add karo:
-InlineKeyboardButton("📱 Open App", web_app=WebAppInfo(url="https://yourusername.github.io/seatswap-miniapp"))
 import os, json, uuid, re
 from datetime import datetime, timedelta
 from telegram import (
@@ -645,6 +642,9 @@ async def rply(update: Update, text: str, kb=None):
 # ═══════════════════════════════════════════════════════
 #  /START
 # ═══════════════════════════════════════════════════════
+from telegram import WebAppInfo
+# Start message mein keyboard add karo:
+InlineKeyboardButton("📱 Open App", web_app=WebAppInfo(url="https://yourusername.github.io/seatswap-miniapp"))
 async def start(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
     ensure_user(user)
