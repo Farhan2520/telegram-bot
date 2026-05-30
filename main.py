@@ -1,3 +1,6 @@
+from telegram import WebAppInfo
+# Start message mein keyboard add karo:
+InlineKeyboardButton("📱 Open App", web_app=WebAppInfo(url="https://yourusername.github.io/seatswap-miniapp"))
 import os, json, uuid, re
 from datetime import datetime, timedelta
 from telegram import (
