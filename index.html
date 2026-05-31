@@ -6,180 +6,280 @@
 <title>SeatSwap</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;600&display=swap');
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
 :root {
-  --bg:#0d0f14; --surface:#161920; --card:#1e2230; --border:#2a2f42;
-  --accent:#4f8ef7; --accent2:#7c3aed; --green:#22c55e; --red:#ef4444;
-  --yellow:#f59e0b; --text:#f0f2ff; --muted:#7b82a0; --r:14px;
+  --bg: #0f1117;
+  --card: #1a1d27;
+  --card2: #212435;
+  --border: #2d3147;
+  --accent: #5b8ef0;
+  --accent2: #8b5cf6;
+  --green: #10b981;
+  --red: #ef4444;
+  --yellow: #f59e0b;
+  --text: #eef0ff;
+  --muted: #6b7280;
+  --r: 16px;
 }
-*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;padding-bottom:72px}
 
-/* TOPBAR */
-.topbar{display:flex;align-items:center;justify-content:space-between;padding:14px 16px 10px;background:var(--surface);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100}
-.logo{font-family:'Syne',sans-serif;font-weight:800;font-size:19px;background:linear-gradient(90deg,var(--accent),#a78bfa);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-.role-badge{font-size:11px;font-weight:600;background:var(--card);border:1px solid var(--border);padding:3px 10px;border-radius:20px;color:var(--muted)}
-.role-badge.admin{color:var(--yellow);border-color:var(--yellow)}
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+  padding-bottom: 80px;
+}
 
-/* TABS */
-.tabs{display:flex;background:var(--surface);border-bottom:1px solid var(--border);overflow-x:auto;scrollbar-width:none}
-.tabs::-webkit-scrollbar{display:none}
-.tab{flex:1;min-width:max-content;padding:11px 14px;font-size:12px;font-weight:600;color:var(--muted);cursor:pointer;border:none;background:none;border-bottom:2px solid transparent;transition:.2s;white-space:nowrap}
-.tab.active{color:var(--accent);border-bottom-color:var(--accent)}
-.tab.atab.active{color:var(--yellow);border-bottom-color:var(--yellow)}
+/* ── TOPBAR ── */
+.topbar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 16px; background: var(--card);
+  border-bottom: 1px solid var(--border);
+  position: sticky; top: 0; z-index: 100;
+}
+.logo { font-size: 18px; font-weight: 800; letter-spacing: -.3px; }
+.logo span { background: linear-gradient(90deg,#5b8ef0,#a78bfa); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+.role-pill {
+  font-size: 11px; font-weight: 700; padding: 4px 12px; border-radius: 20px;
+  background: var(--card2); border: 1px solid var(--border); color: var(--muted);
+  cursor: pointer;
+}
+.role-pill.admin { color: var(--yellow); border-color: rgba(245,158,11,.4); background: rgba(245,158,11,.1); }
 
-/* PAGES */
-.page{display:none;padding:14px;animation:fadeIn .2s ease}
-.page.active{display:block}
-@keyframes fadeIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+/* ── BOTTOM NAV ── */
+.bnav {
+  position: fixed; bottom: 0; left: 0; right: 0;
+  background: var(--card); border-top: 1px solid var(--border);
+  display: flex; z-index: 100; height: 64px;
+  padding-bottom: env(safe-area-inset-bottom);
+}
+.bnav-btn {
+  flex: 1; display: flex; flex-direction: column; align-items: center;
+  justify-content: center; gap: 3px; cursor: pointer;
+  border: none; background: none; color: var(--muted);
+  font-size: 10px; font-weight: 600; transition: .2s; padding: 0;
+}
+.bnav-btn.active { color: var(--accent); }
+.bnav-btn .icon { font-size: 22px; line-height: 1; }
 
-/* CARD */
-.card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:14px;margin-bottom:10px}
-.card-title{font-family:'Syne',sans-serif;font-size:14px;font-weight:700;margin-bottom:4px}
-.card-sub{font-size:12px;color:var(--muted);margin-bottom:12px}
+/* ── PAGES ── */
+.page { display: none; padding: 14px; }
+.page.active { display: block; animation: fadeUp .2s ease; }
+@keyframes fadeUp { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:none; } }
 
-/* STAT GRID */
-.sgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
-.sbox{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:13px;text-align:center}
-.snum{font-family:'Syne',sans-serif;font-size:24px;font-weight:800;background:linear-gradient(135deg,var(--accent),#a78bfa);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-.slbl{font-size:11px;color:var(--muted);margin-top:2px}
+/* ── STATS ── */
+.stats-grid {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 10px; margin-bottom: 14px;
+}
+.stat-box {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: var(--r); padding: 16px 14px; text-align: center;
+}
+.stat-num {
+  font-size: 36px; font-weight: 900; line-height: 1;
+  background: linear-gradient(135deg, var(--accent), #a78bfa);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+}
+.stat-lbl { font-size: 12px; color: var(--muted); margin-top: 5px; font-weight: 500; }
 
-/* SWAP CARD */
-.sc{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:13px;margin-bottom:10px;position:relative;overflow:hidden}
-.sc::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:linear-gradient(180deg,var(--accent),var(--accent2));border-radius:3px 0 0 3px}
-.sc-hdr{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px}
-.sc-name{font-weight:600;font-size:14px}
-.sc-badge{font-size:11px;color:var(--muted)}
-.sc-row{display:flex;align-items:center;gap:6px;margin-bottom:5px;font-size:13px}
-.sc-lbl{font-size:11px;color:var(--muted);width:38px;flex-shrink:0}
-.sc-time{font-size:11px;color:var(--muted)}
-.sc-acts{display:flex;gap:7px;margin-top:10px;flex-wrap:wrap}
+/* ── CARDS ── */
+.card {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: var(--r); padding: 16px; margin-bottom: 12px;
+}
+.card-hdr { font-size: 12px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 12px; }
 
-/* MATCH CARD - special highlight */
-.sc.match-card{border-color:var(--green);background:rgba(34,197,94,.07)}
-.sc.match-card::before{background:linear-gradient(180deg,var(--green),#16a34a)}
+/* ── SWAP CARD ── */
+.sc {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: var(--r); padding: 14px; margin-bottom: 10px;
+  border-left: 3px solid var(--accent);
+}
+.sc.match { border-left-color: var(--green); background: rgba(16,185,129,.05); }
+.sc-name { font-weight: 700; font-size: 14px; }
+.sc-meta { font-size: 11px; color: var(--muted); margin: 3px 0 8px; }
+.sc-seats { font-size: 13px; margin: 6px 0; }
+.sc-acts { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
 
-/* BUTTONS */
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:5px;padding:9px 16px;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;border:none;transition:.15s;user-select:none;text-decoration:none}
-.btn:active{transform:scale(.97)}
-.btn-primary{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff}
-.btn-secondary{background:var(--surface);border:1px solid var(--border);color:var(--text)}
-.btn-danger{background:rgba(239,68,68,.15);color:var(--red);border:1px solid rgba(239,68,68,.3)}
-.btn-success{background:rgba(34,197,94,.15);color:var(--green);border:1px solid rgba(34,197,94,.3)}
-.btn-warn{background:rgba(245,158,11,.15);color:var(--yellow);border:1px solid rgba(245,158,11,.3)}
-.btn-full{width:100%}
-.btn-sm{padding:6px 12px;font-size:12px;border-radius:8px}
+/* ── BUTTONS ── */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 5px;
+  padding: 10px 18px; border-radius: 12px; font-size: 13px; font-weight: 700;
+  cursor: pointer; border: none; transition: .15s; text-decoration: none;
+  user-select: none; white-space: nowrap;
+}
+.btn:active { transform: scale(.97); }
+.btn-primary { background: linear-gradient(135deg, var(--accent), var(--accent2)); color: #fff; }
+.btn-success { background: rgba(16,185,129,.15); color: var(--green); border: 1px solid rgba(16,185,129,.3); }
+.btn-danger  { background: rgba(239,68,68,.15); color: var(--red); border: 1px solid rgba(239,68,68,.3); }
+.btn-warn    { background: rgba(245,158,11,.15); color: var(--yellow); border: 1px solid rgba(245,158,11,.3); }
+.btn-ghost   { background: var(--card2); border: 1px solid var(--border); color: var(--text); }
+.btn-full { width: 100%; }
+.btn-sm { padding: 7px 13px; font-size: 12px; border-radius: 10px; }
 
-/* INPUTS */
-.ig{margin-bottom:12px}
-.il{font-size:12px;color:var(--muted);margin-bottom:5px;display:block}
-.inp{width:100%;padding:10px 13px;background:var(--surface);border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:14px;font-family:'DM Sans',sans-serif;outline:none;transition:.2s}
-.inp:focus{border-color:var(--accent)}
-.inp::placeholder{color:var(--muted)}
-select.inp{appearance:none;cursor:pointer}
+/* ── INPUTS ── */
+.inp-grp { margin-bottom: 12px; }
+.inp-lbl { font-size: 12px; color: var(--muted); margin-bottom: 5px; display: block; font-weight: 600; }
+.inp {
+  width: 100%; padding: 12px 14px; background: var(--card2);
+  border: 1px solid var(--border); border-radius: 12px;
+  color: var(--text); font-size: 14px; outline: none; transition: .2s;
+  font-family: inherit;
+}
+.inp:focus { border-color: var(--accent); }
+.inp::placeholder { color: var(--muted); }
+select.inp { appearance: none; cursor: pointer; }
+textarea.inp { resize: none; line-height: 1.5; }
 
-/* PROGRESS */
-.prog-track{height:6px;background:var(--surface);border-radius:6px;overflow:hidden;margin-top:5px}
-.prog-fill{height:100%;background:linear-gradient(90deg,var(--accent),#a78bfa);border-radius:6px;transition:width .5s}
+/* ── PROFILE ── */
+.profile-hero {
+  background: linear-gradient(135deg, rgba(91,142,240,.15), rgba(139,92,246,.15));
+  border: 1px solid rgba(91,142,240,.2);
+  border-radius: var(--r); padding: 24px; text-align: center; margin-bottom: 14px;
+}
+.profile-av {
+  width: 64px; height: 64px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  display: flex; align-items: center; justify-content: center;
+  font-size: 26px; font-weight: 800; margin: 0 auto 12px;
+}
+.profile-name { font-size: 22px; font-weight: 800; }
+.profile-bdg { font-size: 14px; color: var(--muted); margin-top: 4px; }
 
-/* PROFILE HERO */
-.ph{background:linear-gradient(135deg,rgba(79,142,247,.12),rgba(124,58,237,.12));border:1px solid rgba(79,142,247,.2);border-radius:var(--r);padding:20px;text-align:center;margin-bottom:12px}
-.pa{width:60px;height:60px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;font-size:24px;margin:0 auto 10px}
-.pname{font-family:'Syne',sans-serif;font-size:19px;font-weight:700}
-.pbadge{color:var(--muted);font-size:13px;margin-top:3px}
+/* ── PROGRESS ── */
+.prog-wrap { margin: 14px 0; }
+.prog-track { height: 7px; background: var(--card2); border-radius: 7px; overflow: hidden; }
+.prog-fill { height: 100%; background: linear-gradient(90deg, var(--accent), #a78bfa); border-radius: 7px; transition: width .5s; }
+.prog-labels { display: flex; justify-content: space-between; font-size: 11px; color: var(--muted); margin-top: 5px; }
 
-/* USER ROW */
-.ur{display:flex;align-items:center;justify-content:space-between;padding:11px 0;border-bottom:1px solid var(--border)}
-.ur:last-child{border-bottom:none}
-.ur-name{font-size:13px;font-weight:600}
-.ur-meta{font-size:11px;color:var(--muted);margin-top:2px}
-.ur-acts{display:flex;gap:5px;flex-shrink:0}
+/* ── INFO ROWS ── */
+.ir { display: flex; justify-content: space-between; align-items: center; padding: 9px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
+.ir:last-child { border-bottom: none; }
+.ir-lbl { color: var(--muted); font-weight: 500; }
+.ir-val { font-weight: 600; text-align: right; }
 
-/* MODAL */
-.mo{position:fixed;inset:0;background:rgba(0,0,0,.75);display:flex;align-items:flex-end;justify-content:center;z-index:200;opacity:0;pointer-events:none;transition:.25s}
-.mo.open{opacity:1;pointer-events:all}
-.mb{background:var(--surface);border:1px solid var(--border);border-radius:var(--r) var(--r) 0 0;width:100%;max-width:480px;padding:20px;transform:translateY(40px);transition:.3s;max-height:80vh;overflow-y:auto}
-.mo.open .mb{transform:translateY(0)}
-.mt{font-family:'Syne',sans-serif;font-size:16px;font-weight:700;margin-bottom:14px}
+/* ── ADMIN SECTIONS ── */
+.adm-tabs { display: flex; gap: 6px; margin-bottom: 14px; overflow-x: auto; scrollbar-width: none; padding-bottom: 2px; }
+.adm-tabs::-webkit-scrollbar { display: none; }
+.adm-tab {
+  flex-shrink: 0; padding: 8px 16px; border-radius: 20px;
+  font-size: 12px; font-weight: 700; cursor: pointer;
+  background: var(--card2); border: 1px solid var(--border); color: var(--muted);
+  transition: .2s;
+}
+.adm-tab.active { background: var(--accent); color: #fff; border-color: var(--accent); }
 
-/* TOAST */
-#toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--card);border:1px solid var(--border);border-radius:10px;padding:9px 16px;font-size:13px;font-weight:500;opacity:0;transition:.3s;pointer-events:none;z-index:999;white-space:nowrap;max-width:90vw;text-align:center}
-#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+/* ── USER ROW ── */
+.ur { display: flex; align-items: center; gap: 10px; padding: 11px 0; border-bottom: 1px solid var(--border); }
+.ur:last-child { border-bottom: none; }
+.ur-av { width: 38px; height: 38px; border-radius: 50%; background: linear-gradient(135deg,var(--accent),var(--accent2)); display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 15px; flex-shrink: 0; }
+.ur-info { flex: 1; min-width: 0; }
+.ur-name { font-size: 13px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ur-meta { font-size: 11px; color: var(--muted); margin-top: 2px; }
+.ur-acts { display: flex; gap: 5px; flex-shrink: 0; }
 
-/* LOADER */
-.loader{display:flex;align-items:center;justify-content:center;padding:36px;gap:8px;color:var(--muted)}
-.spin{width:18px;height:18px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite}
-@keyframes spin{to{transform:rotate(360deg)}}
+/* ── CONFIRM BANNER ── */
+.confirm-banner {
+  background: rgba(16,185,129,.1); border: 1px solid rgba(16,185,129,.3);
+  border-radius: var(--r); padding: 16px; margin-bottom: 14px;
+}
+.confirm-banner h3 { color: var(--green); font-size: 15px; margin-bottom: 6px; }
+.confirm-banner p { font-size: 13px; color: var(--muted); margin-bottom: 12px; line-height: 1.5; }
 
-/* EMPTY */
-.empty{text-align:center;padding:36px 16px;color:var(--muted)}
-.empty-icon{font-size:34px;margin-bottom:8px}
+/* ── MODAL ── */
+.mo { position: fixed; inset: 0; background: rgba(0,0,0,.8); display: flex; align-items: flex-end; z-index: 300; opacity: 0; pointer-events: none; transition: .25s; }
+.mo.open { opacity: 1; pointer-events: all; }
+.mb { background: var(--card); border: 1px solid var(--border); border-radius: var(--r) var(--r) 0 0; width: 100%; padding: 20px; transform: translateY(40px); transition: .3s; max-height: 85vh; overflow-y: auto; }
+.mo.open .mb { transform: translateY(0); }
+.mb-title { font-size: 17px; font-weight: 800; margin-bottom: 16px; }
+.mb-close { float: right; font-size: 20px; cursor: pointer; color: var(--muted); margin-top: -4px; }
 
-/* CONFIRM BANNER */
-.confirm-banner{background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.3);border-radius:var(--r);padding:13px;margin-bottom:12px}
-.confirm-banner .cb-title{font-weight:700;color:var(--green);margin-bottom:6px;font-size:14px}
+/* ── BADGE CHIPS ── */
+.badge-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; margin: 10px 0; }
+.badge-chip {
+  padding: 10px; border-radius: 10px; text-align: center;
+  background: var(--card2); border: 1px solid var(--border);
+  cursor: pointer; font-size: 12px; font-weight: 700; transition: .15s;
+}
+.badge-chip:active,.badge-chip.sel { background: var(--accent); color: #fff; border-color: var(--accent); }
 
-/* DIVIDER */
-hr{border:none;border-top:1px solid var(--border);margin:12px 0}
+/* ── EMPTY ── */
+.empty { text-align: center; padding: 40px 16px; color: var(--muted); }
+.empty-icon { font-size: 40px; margin-bottom: 10px; }
+.empty p { font-size: 14px; }
 
-/* INFO ROWS */
-.ir{display:flex;justify-content:space-between;padding:6px 0;font-size:13px;border-bottom:1px solid var(--border)}
-.ir:last-child{border-bottom:none}
-.ir-lbl{color:var(--muted)}
+/* ── LOADER ── */
+.loader { display: flex; align-items: center; justify-content: center; padding: 40px; gap: 8px; color: var(--muted); }
+.spin { width: 18px; height: 18px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin .7s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── TOAST ── */
+#toast { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%) translateY(20px); background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 10px 18px; font-size: 13px; font-weight: 600; opacity: 0; transition: .3s; pointer-events: none; z-index: 999; white-space: nowrap; max-width: 90vw; text-align: center; }
+#toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* ── STEP DOTS ── */
+.step-dots { display: flex; justify-content: center; gap: 6px; margin-bottom: 18px; }
+.dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border); transition: .3s; }
+.dot.done { background: var(--green); }
+.dot.active { background: var(--accent); width: 22px; border-radius: 4px; }
+
+/* ── COACH GRID ── */
+.coach-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 6px; margin: 8px 0; }
+.coach-btn { padding: 10px 6px; border-radius: 10px; text-align: center; cursor: pointer; background: var(--card2); border: 1px solid var(--border); font-size: 12px; font-weight: 700; transition: .15s; }
+.coach-btn.sel { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+/* ── CT GRID ── */
+.ct-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 8px 0; }
+.ct-btn { padding: 12px 10px; border-radius: 12px; text-align: center; cursor: pointer; background: var(--card2); border: 1px solid var(--border); font-size: 12px; font-weight: 700; transition: .15s; line-height: 1.4; }
+.ct-btn.sel { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+/* ── BERTH GRID ── */
+.berth-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 8px 0; }
+.berth-btn { padding: 13px; border-radius: 12px; text-align: center; cursor: pointer; background: var(--card2); border: 1px solid var(--border); font-size: 13px; font-weight: 700; transition: .15s; }
+.berth-btn.sel { background: var(--accent); color: #fff; border-color: var(--accent); }
 </style>
 </head>
 <body>
 
 <div class="topbar">
-  <div class="logo">🚆 SeatSwap</div>
-  <div class="role-badge" id="role-badge">Loading...</div>
-</div>
-
-<div class="tabs" id="tabs-bar">
-  <button class="tab active" onclick="showPage('home')">🏠 Home</button>
-  <button class="tab" onclick="showPage('find')">🔍 Find</button>
-  <button class="tab" onclick="showPage('my-swap')">📋 My Swap</button>
-  <button class="tab" onclick="showPage('profile')">👤 Profile</button>
+  <div class="logo">🚆 <span>SeatSwap</span></div>
+  <div class="role-pill" id="role-pill" onclick="onRolePillClick()">Loading...</div>
 </div>
 
 <div id="toast"></div>
 
-<!-- ══ HOME ══ -->
-<div class="page active" id="page-home">
-  <div class="card" style="background:linear-gradient(135deg,rgba(79,142,247,.1),rgba(124,58,237,.1));border-color:rgba(79,142,247,.25)">
-    <div class="card-title">Welcome to SeatSwap 🚆</div>
-    <div class="card-sub">Exchange train berths instantly with fellow passengers</div>
-    <div style="display:flex;gap:8px">
-      <button class="btn btn-primary" onclick="showPage('find')" style="flex:1">🔍 Find Seat</button>
-      <button class="btn btn-secondary" onclick="showPage('my-swap')" style="flex:1">📋 My Request</button>
-    </div>
+<!-- ═══ HOME ═══ -->
+<div class="page active" id="pg-home">
+  <div id="confirm-area"></div>
+  <div class="stats-grid" id="home-stats">
+    <div class="stat-box"><div class="stat-num" id="s-active">—</div><div class="stat-lbl">Active Swaps</div></div>
+    <div class="stat-box"><div class="stat-num" id="s-users">—</div><div class="stat-lbl">Total Users</div></div>
+    <div class="stat-box"><div class="stat-num" id="s-done">—</div><div class="stat-lbl">Swaps Done</div></div>
+    <div class="stat-box"><div class="stat-num" id="s-trains">—</div><div class="stat-lbl">Active Trains</div></div>
   </div>
-  <div class="sgrid" id="home-stats">
-    <div class="sbox"><div class="snum" id="hs-active">—</div><div class="slbl">Active Swaps</div></div>
-    <div class="sbox"><div class="snum" id="hs-users">—</div><div class="slbl">Total Users</div></div>
-    <div class="sbox"><div class="snum" id="hs-done">—</div><div class="slbl">Swaps Done</div></div>
-    <div class="sbox"><div class="snum" id="hs-trains">—</div><div class="slbl">Active Trains</div></div>
-  </div>
-  <div id="pending-confirms"></div>
+  <div id="my-req-home"></div>
   <div class="card">
-    <div class="card-title">🏅 Badge Levels</div>
-    <div style="font-size:13px;display:flex;flex-direction:column;gap:6px;margin-top:4px">
+    <div class="card-hdr">🏅 Badge Levels</div>
+    <div style="display:flex;flex-direction:column;gap:8px;font-size:13px">
       <div style="display:flex;justify-content:space-between"><span>🌱 Newcomer</span><span style="color:var(--muted)">0 swaps</span></div>
-      <div style="display:flex;justify-content:space-between"><span>🎫 Regular Traveler</span><span style="color:var(--muted)">3 swaps</span></div>
-      <div style="display:flex;justify-content:space-between"><span>⭐ Trusted Member</span><span style="color:var(--muted)">10 swaps</span></div>
-      <div style="display:flex;justify-content:space-between"><span>🔰 Expert Swapper</span><span style="color:var(--muted)">25 swaps</span></div>
-      <div style="display:flex;justify-content:space-between"><span>👑 Seat Master</span><span style="color:var(--muted)">50 swaps</span></div>
+      <div style="display:flex;justify-content:space-between"><span>🎫 Regular Traveler</span><span style="color:var(--muted)">3+ swaps</span></div>
+      <div style="display:flex;justify-content:space-between"><span>⭐ Trusted Member</span><span style="color:var(--muted)">10+ swaps</span></div>
+      <div style="display:flex;justify-content:space-between"><span>🔰 Expert Swapper</span><span style="color:var(--muted)">25+ swaps</span></div>
+      <div style="display:flex;justify-content:space-between"><span>👑 Seat Master</span><span style="color:var(--muted)">50+ swaps</span></div>
     </div>
   </div>
 </div>
 
-<!-- ══ FIND ══ -->
-<div class="page" id="page-find">
-  <div class="ig">
-    <label class="il">Train Number</label>
-    <input class="inp" id="find-train" placeholder="e.g. 12301" type="number" oninput="onTrainInput()"/>
+<!-- ═══ FIND ═══ -->
+<div class="page" id="pg-find">
+  <div class="inp-grp">
+    <label class="inp-lbl">Train Number</label>
+    <input class="inp" id="find-inp" type="number" placeholder="e.g. 12301" oninput="onFindInput()"/>
   </div>
-  <div class="ig">
+  <div class="inp-grp">
     <select class="inp" id="find-ct" onchange="doSearch()">
       <option value="">All Coach Types</option>
       <option value="SL">🛏 Sleeper</option>
@@ -191,741 +291,819 @@ hr{border:none;border-top:1px solid var(--border);margin:12px 0}
       <option value="GN">🚃 General</option>
     </select>
   </div>
-  <div id="find-results"><div class="empty"><div class="empty-icon">🔍</div><p>Enter train number above</p></div></div>
+  <div id="find-res"><div class="empty"><div class="empty-icon">🔍</div><p>Enter train number to search</p></div></div>
 </div>
 
-<!-- ══ MY SWAP ══ -->
-<div class="page" id="page-my-swap">
-  <div id="my-swap-content"><div class="loader"><div class="spin"></div> Loading...</div></div>
+<!-- ═══ POST ═══ -->
+<div class="page" id="pg-post">
+  <div class="step-dots" id="post-dots"></div>
+  <div id="post-content"></div>
 </div>
 
-<!-- ══ PROFILE ══ -->
-<div class="page" id="page-profile">
-  <div id="profile-content"><div class="loader"><div class="spin"></div> Loading...</div></div>
+<!-- ═══ PROFILE ═══ -->
+<div class="page" id="pg-profile">
+  <div id="profile-content"><div class="loader"><div class="spin"></div></div></div>
 </div>
 
-<!-- ══ ADMIN STATS ══ -->
-<div class="page" id="page-admin-stats">
-  <div class="sgrid">
-    <div class="sbox"><div class="snum" id="a-users">—</div><div class="slbl">Users</div></div>
-    <div class="sbox"><div class="snum" id="a-active">—</div><div class="slbl">Active Swaps</div></div>
-    <div class="sbox"><div class="snum" id="a-done">—</div><div class="slbl">Completed</div></div>
-    <div class="sbox"><div class="snum" id="a-banned">—</div><div class="slbl">Banned</div></div>
-    <div class="sbox"><div class="snum" id="a-reports">—</div><div class="slbl">Reports</div></div>
-    <div class="sbox"><div class="snum" id="a-fbs">—</div><div class="slbl">Feedbacks</div></div>
+<!-- ═══ ADMIN ═══ -->
+<div class="page" id="pg-admin">
+  <div class="adm-tabs" id="adm-tabs">
+    <div class="adm-tab active" onclick="setAdmTab('stats',this)">📊 Stats</div>
+    <div class="adm-tab" onclick="setAdmTab('users',this)">👥 Users</div>
+    <div class="adm-tab" onclick="setAdmTab('swaps',this)">🔄 Swaps</div>
+    <div class="adm-tab" onclick="setAdmTab('fbs',this)">💬 Feedbacks</div>
+    <div class="adm-tab" onclick="setAdmTab('tools',this)">🛠 Tools</div>
   </div>
-  <div class="card">
-    <div class="card-title">📢 Broadcast</div>
-    <textarea class="inp" id="bc-msg" rows="3" placeholder="Type announcement..." style="resize:none"></textarea>
-    <button class="btn btn-warn btn-full" style="margin-top:8px" onclick="broadcast()">📢 Send to All Users</button>
-  </div>
-  <div class="card" id="db-status-card">
-    <div class="card-title">🔌 Firebase Status</div>
-    <div id="db-status" style="font-size:13px;color:var(--muted)">Checking...</div>
-  </div>
+  <div id="adm-content"><div class="loader"><div class="spin"></div></div></div>
 </div>
 
-<!-- ══ ADMIN USERS ══ -->
-<div class="page" id="page-admin-users">
-  <input class="inp" id="user-search" placeholder="🔍 Search name or username" oninput="filterUsers()" style="margin-bottom:12px"/>
-  <div id="users-list"><div class="loader"><div class="spin"></div></div></div>
+<!-- ═══ BOTTOM NAV ═══ -->
+<nav class="bnav" id="bnav">
+  <button class="bnav-btn active" onclick="showPage('home',this)"><span class="icon">🏠</span>Home</button>
+  <button class="bnav-btn" onclick="showPage('find',this)"><span class="icon">🔍</span>Find</button>
+  <button class="bnav-btn" onclick="showPage('post',this)"><span class="icon">🔄</span>Post</button>
+  <button class="bnav-btn" onclick="showPage('profile',this)"><span class="icon">👤</span>Profile</button>
+</nav>
+
+<!-- ═══ USER MODAL ═══ -->
+<div class="mo" id="user-mo" onclick="closeMo('user-mo',event)">
+  <div class="mb"><span class="mb-close" onclick="document.getElementById('user-mo').classList.remove('open')">✕</span><div class="mb-title" id="um-title"></div><div id="um-body"></div></div>
 </div>
 
-<!-- ══ ADMIN SWAPS ══ -->
-<div class="page" id="page-admin-swaps">
-  <div id="admin-swaps-list"><div class="loader"><div class="spin"></div></div></div>
-</div>
-
-<!-- ══ ADMIN FEEDBACKS ══ -->
-<div class="page" id="page-admin-fbs">
-  <div id="fbs-list"><div class="loader"><div class="spin"></div></div></div>
-</div>
-
-<!-- ══ USER MODAL ══ -->
-<div class="mo" id="user-modal" onclick="closeModal(event)">
-  <div class="mb">
-    <div class="mt" id="modal-title">User Details</div>
-    <div id="modal-body"></div>
-  </div>
-</div>
-
-<!-- ══ CONFIRM MODAL ══ -->
-<div class="mo" id="confirm-modal" onclick="closeModal(event)">
-  <div class="mb">
-    <div class="mt">✅ Confirm Swap</div>
-    <div id="confirm-modal-body"></div>
-  </div>
+<!-- ═══ CONFIRM MODAL ═══ -->
+<div class="mo" id="conf-mo" onclick="closeMo('conf-mo',event)">
+  <div class="mb"><span class="mb-close" onclick="document.getElementById('conf-mo').classList.remove('open')">✕</span><div class="mb-title">✅ Confirm Swap</div><div id="conf-body"></div></div>
 </div>
 
 <script>
-// ════════════════════════════════════════════
-//  CONFIG — fill these
-// ════════════════════════════════════════════
-const FB_URL  = "https://seatswap-a96ec-default-rtdb.firebaseio.com";
-const ADMIN_IDS = [5981332827]; // your Telegram ID
+// ══════════════════════════════════════
+//  CONFIG
+// ══════════════════════════════════════
+const FB_URL    = "https://seatswap-a96ec-default-rtdb.firebaseio.com";
+const ADMIN_IDS = [5981332827]; // Add your Telegram ID here
 
-// ════════════════════════════════════════════
-//  TELEGRAM INIT
-// ════════════════════════════════════════════
+// ══════════════════════════════════════
+//  TELEGRAM
+// ══════════════════════════════════════
 const tg = window.Telegram?.WebApp;
-let tgUser = null, isAdmin = false;
+if (tg) { tg.ready(); tg.expand(); }
 
-if (tg) {
-  tg.ready();
-  tg.expand();
-  tg.setHeaderColor?.('#0d0f14');
-}
-
-// Get user — handle all cases
-const _rawUser = tg?.initDataUnsafe?.user;
-if (_rawUser && _rawUser.id) {
-  tgUser = _rawUser;
-} else {
-  // Fallback: try to get from URL param (for testing) or use guest
-  const urlParams = new URLSearchParams(window.location.search);
-  const testId = urlParams.get('uid');
-  tgUser = testId
-    ? { id: parseInt(testId), first_name: "Test", username: "test" }
-    : { id: 0, first_name: "Guest", username: "guest" };
-}
-
+const _u = tg?.initDataUnsafe?.user;
+const tgUser = (_u && _u.id) ? _u : { id: 0, first_name: "Guest", username: "guest" };
 const ME = Number(tgUser.id);
 
-// Admin check — compare as numbers (Firebase stores as number, Telegram sends number)
-isAdmin = ADMIN_IDS.map(Number).includes(ME);
+let isAdmin = ADMIN_IDS.map(Number).includes(ME);
 
-// Show role
-const roleBadge = document.getElementById('role-badge');
-roleBadge.textContent = isAdmin ? '🛠 Admin' : '👤 User';
-if (isAdmin) roleBadge.classList.add('admin');
+function initRolePill() {
+  const p = document.getElementById('role-pill');
+  p.textContent = isAdmin ? '🛠 Admin' : `🔑 ${ME}`;
+  p.className = 'role-pill' + (isAdmin ? ' admin' : '');
+}
+initRolePill();
 
-// Debug line — shows your ID so you can verify
-// Click role badge to re-check admin status
-document.getElementById('role-badge').onclick = () => {
-  if (!isAdmin) {
-    checkAndSetAdmin();
-  } else {
-    showToast('🛠 You are admin · ID: ' + ME);
-  }
-};
-console.log('SeatSwap: tgUser.id =', tgUser.id, '| ME =', ME, '| isAdmin =', isAdmin, '| ADMIN_IDS =', ADMIN_IDS);
-
-// Inject admin tabs
-function injectAdminTabs() {
-  const bar = document.getElementById('tabs-bar');
-  // Remove existing admin tabs to avoid duplicates
-  bar.querySelectorAll('.atab').forEach(t => t.remove());
-  [['📊 Stats','admin-stats'],['👥 Users','admin-users'],['🔄 Swaps','admin-swaps'],['💬 Feedbacks','admin-fbs']].forEach(([lbl,id]) => {
-    const b = document.createElement('button');
-    b.className = 'tab atab'; b.textContent = lbl;
-    b.onclick = () => showPage(id);
-    bar.appendChild(b);
+function onRolePillClick() {
+  if (isAdmin) { showToast('🛠 Admin · ID: ' + ME); return; }
+  // Try Firebase check
+  fbGet('admin_ids').then(ids => {
+    if (!ids) { showToast('Your ID: ' + ME); return; }
+    const list = Array.isArray(ids) ? ids : Object.values(ids);
+    if (list.map(Number).includes(ME)) {
+      isAdmin = true; initRolePill(); addAdminNav();
+      showToast('✅ Admin access!');
+    } else {
+      showToast('ID: ' + ME + ' | Not admin');
+    }
   });
 }
 
-if (isAdmin) {
-  injectAdminTabs();
-} else {
-  // Also check Firebase in case ADMIN_IDS is wrong — async fallback
-  setTimeout(async () => {
-    try {
-      const dbUser = await fbGet(`users/${ME}`);
-      if (dbUser && (dbUser.special_user || dbUser.special_badge?.includes('Official'))) {
-        // Check if this user is in ADMIN_IDS based on bot config
-        const botStatus = await fbGet('bot_status');
-        // Check admin_ids list if stored
-        const adminList = await fbGet('admin_ids');
-        if (adminList && (Array.isArray(adminList) ? adminList : Object.values(adminList)).map(Number).includes(ME)) {
-          isAdmin = true;
-          roleBadge.textContent = '🛠 Admin';
-          roleBadge.classList.add('admin');
-          injectAdminTabs();
-        }
-      }
-    } catch(e) { /* silent */ }
-  }, 1000);
+function addAdminNav() {
+  const nav = document.getElementById('bnav');
+  if (nav.querySelector('[data-admin]')) return;
+  const b = document.createElement('button');
+  b.className = 'bnav-btn';
+  b.setAttribute('data-admin','1');
+  b.innerHTML = '<span class="icon">⚙️</span>Admin';
+  b.onclick = function() { showPage('admin', b); loadAdmTab(currentAdmTab); };
+  nav.appendChild(b);
 }
 
-// ════════════════════════════════════════════
-//  FIREBASE REST
-// ════════════════════════════════════════════
-async function fbGet(path) {
-  try { const r = await fetch(`${FB_URL}/${path}.json`); return r.ok ? r.json() : null; }
-  catch { return null; }
-}
-async function fbSet(path, data) {
-  try { await fetch(`${FB_URL}/${path}.json`, { method:'PUT', body:JSON.stringify(data), headers:{'Content-Type':'application/json'} }); return true; }
-  catch { return false; }
-}
-async function fbPatch(path, data) {
-  try { await fetch(`${FB_URL}/${path}.json`, { method:'PATCH', body:JSON.stringify(data), headers:{'Content-Type':'application/json'} }); return true; }
-  catch { return false; }
-}
-async function fbDel(path) {
-  try { await fetch(`${FB_URL}/${path}.json`, { method:'DELETE' }); return true; }
-  catch { return false; }
-}
+if (isAdmin) addAdminNav();
 
-// ════════════════════════════════════════════
+// Auto-check Firebase for admin on load
+setTimeout(() => {
+  if (isAdmin) return;
+  fbGet('admin_ids').then(ids => {
+    if (!ids) return;
+    const list = Array.isArray(ids) ? ids : Object.values(ids);
+    if (list.map(Number).includes(ME)) {
+      isAdmin = true; initRolePill(); addAdminNav();
+    }
+  }).catch(()=>{});
+}, 1500);
+
+// ══════════════════════════════════════
+//  FIREBASE
+// ══════════════════════════════════════
+const fbGet  = p => fetch(`${FB_URL}/${p}.json`).then(r=>r.json()).catch(()=>null);
+const fbSet  = (p,d) => fetch(`${FB_URL}/${p}.json`,{method:'PUT',body:JSON.stringify(d),headers:{'Content-Type':'application/json'}}).catch(()=>null);
+const fbPatch= (p,d) => fetch(`${FB_URL}/${p}.json`,{method:'PATCH',body:JSON.stringify(d),headers:{'Content-Type':'application/json'}}).catch(()=>null);
+const fbDel  = p => fetch(`${FB_URL}/${p}.json`,{method:'DELETE'}).catch(()=>null);
+
+// ══════════════════════════════════════
 //  ROUTING
-// ════════════════════════════════════════════
-function showPage(id) {
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-  const pg = document.getElementById('page-' + id);
-  if (pg) pg.classList.add('active');
-  document.querySelectorAll('.tab').forEach(t => {
-    if (t.getAttribute('onclick')?.includes(`'${id}'`)) t.classList.add('active');
-  });
-  if (id === 'home')         loadHomeStats();
-  if (id === 'my-swap')      loadMySwap();
-  if (id === 'profile')      loadProfile();
-  if (id === 'admin-stats')  loadAdminStats();
-  if (id === 'admin-users')  loadUsers();
-  if (id === 'admin-swaps')  loadAdminSwaps();
-  if (id === 'admin-fbs')    loadFeedbacks();
+// ══════════════════════════════════════
+let curPage = 'home';
+function showPage(id, btn) {
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.bnav-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('pg-'+id)?.classList.add('active');
+  btn?.classList.add('active');
+  curPage = id;
+  if (id==='home')    loadHome();
+  if (id==='profile') loadProfile();
+  if (id==='post')    initPost();
+  if (id==='admin' && isAdmin) loadAdmTab(currentAdmTab);
 }
 
-// ════════════════════════════════════════════
+// ══════════════════════════════════════
 //  UTILS
-// ════════════════════════════════════════════
-function esc(s) {
-  return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+// ══════════════════════════════════════
+const esc = s => String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  clearTimeout(t._t); t._t = setTimeout(()=>t.classList.remove('show'),2800);
 }
+const showToast = toast;
+function closeMo(id, e) { if(e.target.classList.contains('mo')) document.getElementById(id).classList.remove('open'); }
+
 function timeAgo(ts) {
   if (!ts) return '';
   try {
-    const mon = {Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11};
+    const mon={Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11};
     const p = ts.match(/(\d+) (\w+) (\d+) (\d+):(\d+) (AM|PM)/);
     if (!p) return ts;
-    let h = +p[4]; if (p[6]==='PM'&&h<12) h+=12; if (p[6]==='AM'&&h===12) h=0;
-    const d = new Date(+p[3], mon[p[2]], +p[1], h, +p[5]);
-    const m = (Date.now()-d)/60000;
-    if (m<1) return 'just now'; if (m<60) return `${~~m}m ago`;
-    if (m<1440) return `${~~(m/60)}h ago`; return `${~~(m/1440)}d ago`;
+    let h=+p[4]; if(p[6]==='PM'&&h<12)h+=12; if(p[6]==='AM'&&h===12)h=0;
+    const d=new Date(+p[3],mon[p[2]],+p[1],h,+p[5]);
+    const m=(Date.now()-d)/60000;
+    if(m<1)return'just now'; if(m<60)return`${~~m}m ago`;
+    if(m<1440)return`${~~(m/60)}h ago`; return`${~~(m/1440)}d ago`;
   } catch { return ts; }
 }
-function showToast(msg) {
-  const t = document.getElementById('toast');
-  t.textContent = msg; t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), 2800);
-}
-function sameUser(uid) { return Number(uid) === ME; }
 
-const BADGE_LVL = [[0,'🌱','Newcomer'],[3,'🎫','Regular'],[10,'⭐','Trusted'],[25,'🔰','Expert'],[50,'👑','Master']];
+const BDGS = [[0,'🌱','Newcomer'],[3,'🎫','Regular'],[10,'⭐','Trusted'],[25,'🔰','Expert'],[50,'👑','Master']];
 function calcBadge(swaps, special) {
   if (special) return special;
-  let b = BADGE_LVL[0];
-  for (const l of BADGE_LVL) if (swaps >= l[0]) b = l;
+  let b=BDGS[0]; for(const l of BDGS) if(swaps>=l[0]) b=l;
   return `${b[0]} ${b[2]}`;
 }
-function progressBar(swaps) {
-  let cur = BADGE_LVL[0], nxt = null;
-  for (let i=0;i<BADGE_LVL.length;i++) { if(swaps>=BADGE_LVL[i][0]){cur=BADGE_LVL[i];nxt=BADGE_LVL[i+1]||null;} }
-  if (!nxt) return { pct:100, label:'👑 Max badge reached!' };
-  const pct = Math.min(100, ((swaps-cur[0])/(nxt[0]-cur[0]))*100);
-  return { pct, label:`${nxt[0]-swaps} more → ${nxt[0]} ${nxt[2]}` };
+function calcProgress(swaps) {
+  let cur=BDGS[0],nxt=null;
+  for(let i=0;i<BDGS.length;i++){if(swaps>=BDGS[i][0]){cur=BDGS[i];nxt=BDGS[i+1]||null;}}
+  if(!nxt) return {pct:100,lbl:'👑 Max level reached!'};
+  return {pct:Math.min(100,((swaps-cur[0])/(nxt[0]-cur[0]))*100),lbl:`${nxt[0]-swaps} more → ${nxt[2]}`};
+}
+function sameUser(uid) { return Number(uid)===ME; }
+
+const OPP = {
+  lower:['upper','middle','any'],upper:['lower','middle','any'],middle:['lower','upper','any'],
+  'side lower':['side upper','any'],'side upper':['side lower','any'],
+  window:['aisle','middle','any'],aisle:['window','middle','any'],
+  any:['lower','upper','middle','side lower','side upper','window','aisle','any']
+};
+function isMatch(a,b) {
+  const nw=(a.want_berth||'').toLowerCase(),nc=(a.cur_berth||'').toLowerCase();
+  const tw=(b.want_berth||'').toLowerCase(),tc=(b.cur_berth||'').toLowerCase();
+  return (tw===nc||(OPP[nc]||[]).includes(tw))||(nw===tc||(OPP[tc]||[]).includes(nw));
 }
 
-// ════════════════════════════════════════════
-//  HOME STATS + PENDING CONFIRMS
-// ════════════════════════════════════════════
-async function loadHomeStats() {
-  const [swaps, users] = await Promise.all([fbGet('swaps'), fbGet('users')]);
+// ══════════════════════════════════════
+//  HOME
+// ══════════════════════════════════════
+async function loadHome() {
+  const [swaps,users] = await Promise.all([fbGet('swaps'),fbGet('users')]);
   const sl = swaps ? Object.values(swaps) : [];
   const ul = users ? Object.values(users) : [];
   const active = sl.filter(s=>s.status==='active').length;
   const done   = ul.reduce((a,u)=>a+(u.swaps_done||0),0);
   const trains = new Set(sl.filter(s=>s.status==='active').map(s=>s.train)).size;
-  document.getElementById('hs-active').textContent = active;
-  document.getElementById('hs-users').textContent  = ul.length;
-  document.getElementById('hs-done').textContent   = done;
-  document.getElementById('hs-trains').textContent = trains;
-
-  // Check pending confirms for this user
-  await loadPendingConfirms(swaps);
+  document.getElementById('s-active').textContent = active;
+  document.getElementById('s-users').textContent  = ul.length;
+  document.getElementById('s-done').textContent   = done;
+  document.getElementById('s-trains').textContent = trains;
+  // My active request
+  const mine = sl.find(s=>sameUser(s.user_id));
+  const myReqEl = document.getElementById('my-req-home');
+  if (mine) {
+    myReqEl.innerHTML = `
+    <div class="card" style="border-left:3px solid var(--yellow);margin-bottom:14px">
+      <div class="card-hdr">📋 Your Active Request</div>
+      <div style="font-size:13px;display:flex;flex-direction:column;gap:5px">
+        <div>🚆 <b>${esc(mine.train)}</b> — ${esc(mine.train_name||mine.train)}</div>
+        <div>🚉 <b>${esc(mine.coach)}</b> (${esc(mine.coach_type)})</div>
+        <div>💺 Has: Seat <b>${esc(mine.cur_seat)}</b> (${esc(mine.cur_berth)})</div>
+        <div>🔄 Wants: <b>${esc(mine.want_berth)}</b>${mine.want_seat&&mine.want_seat!='Any'?` — Seat ${esc(mine.want_seat)}`:''}</div>
+        <div style="color:var(--muted)">🕐 ${timeAgo(mine.ts)}</div>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:12px">
+        <button class="btn btn-ghost btn-sm" onclick="deleteMySwap('${mine.swap_id}')">🗑 Delete</button>
+        <button class="btn btn-primary btn-sm" onclick="document.querySelector('[onclick*=find]').click()">🔍 Find Match</button>
+      </div>
+    </div>`;
+  } else {
+    myReqEl.innerHTML = `
+    <div style="display:flex;gap:8px;margin-bottom:14px">
+      <button class="btn btn-primary" style="flex:1" onclick="document.querySelectorAll('.bnav-btn')[2].click()">🔄 Change Seat</button>
+      <button class="btn btn-ghost" style="flex:1" onclick="document.querySelectorAll('.bnav-btn')[1].click()">🔍 Find Seat</button>
+    </div>`;
+  }
+  // Pending confirms
+  await loadPendingConfirm(mine);
 }
 
-async function loadPendingConfirms(swaps) {
-  const el = document.getElementById('pending-confirms');
-  if (!swaps) { el.innerHTML = ''; return; }
-
-  // Find if current user has any swap that got a confirmation from someone else
+async function loadPendingConfirm(mine) {
+  const el = document.getElementById('confirm-area');
+  if (!mine) { el.innerHTML=''; return; }
+  const sid = mine.swap_id;
   const confirmed = await fbGet('confirmed') || {};
-  // Keys are like "uid_sid" — find where someone confirmed a swap that belongs to ME
-  const mySwap = Object.values(swaps).find(s => sameUser(s.user_id));
-  if (!mySwap) { el.innerHTML = ''; return; }
-
-  const sid = mySwap.swap_id;
-  const myKey = `${ME}_${sid}`;
-  const alreadyConfirmed = confirmed[myKey];
-  const otherConfirmed   = Object.keys(confirmed).some(k => k.endsWith(`_${sid}`) && !k.startsWith(`${ME}_`));
-
-  if (otherConfirmed && !alreadyConfirmed) {
+  const iConf  = !!confirmed[`${ME}_${sid}`];
+  const theyConf = Object.keys(confirmed).some(k=>k.endsWith(`_${sid}`)&&!k.startsWith(`${ME}_`));
+  if (theyConf && !iConf) {
     el.innerHTML = `
-      <div class="confirm-banner">
-        <div class="cb-title">🎉 Match Confirmed by Other Person!</div>
-        <p style="font-size:13px;margin-bottom:10px">Your swap partner confirmed the exchange. Please confirm from your side to earn <b>+10 points</b>!</p>
-        <button class="btn btn-success btn-full" onclick="confirmSwapFromApp('${sid}')">✅ Confirm Swap Done — Earn +10 pts</button>
-      </div>`;
-  } else if (alreadyConfirmed && !otherConfirmed) {
-    el.innerHTML = `<div class="card" style="border-color:var(--yellow)"><p style="font-size:13px;color:var(--yellow)">⏳ You confirmed! Waiting for your swap partner to also confirm...</p></div>`;
+    <div class="confirm-banner">
+      <h3>🎉 Partner Confirmed the Swap!</h3>
+      <p>Your swap partner confirmed the exchange. Tap below to confirm from your side and earn <b>+10 points</b> + badge progress!</p>
+      <button class="btn btn-success btn-full" onclick="confirmSwap('${sid}')">✅ Yes, Swap Done! Earn +10 pts</button>
+    </div>`;
+  } else if (iConf && !theyConf) {
+    el.innerHTML = `<div class="card" style="border-color:var(--yellow);margin-bottom:14px"><p style="font-size:13px;color:var(--yellow)">⏳ You confirmed! Waiting for your partner to also confirm...</p></div>`;
   } else {
     el.innerHTML = '';
   }
 }
 
-// ════════════════════════════════════════════
-//  CONFIRM SWAP FROM MINI APP
-// ════════════════════════════════════════════
-async function confirmSwapFromApp(sid) {
+// ══════════════════════════════════════
+//  CONFIRM SWAP
+// ══════════════════════════════════════
+async function confirmSwap(sid) {
   const key = `confirmed/${ME}_${sid}`;
   const already = await fbGet(key);
-  if (already) { showToast('Already confirmed!'); return; }
-
+  if (already) { toast('Already confirmed!'); return; }
   await fbSet(key, true);
   const allConf = await fbGet('confirmed') || {};
-  const parties = Object.keys(allConf).filter(k => k.endsWith(`_${sid}`));
-
+  const parties = Object.keys(allConf).filter(k=>k.endsWith(`_${sid}`));
   if (parties.length >= 2) {
     // Award both
-    const u = await fbGet(`users/${ME}`) || {};
-    const sd = (u.swaps_done||0) + 1;
-    const pt = (u.points||0) + 10;
-    await fbPatch(`users/${ME}`, { swaps_done: sd, points: pt, badge: calcBadge(sd, u.special_badge||'') });
-    // Award other
+    const myUser = await fbGet(`users/${ME}`) || {};
+    const sd = (myUser.swaps_done||0)+1, pt = (myUser.points||0)+10;
+    await fbPatch(`users/${ME}`,{swaps_done:sd,points:pt,badge:calcBadge(sd,myUser.special_badge||'')});
     for (const ck of parties) {
-      const ouid = ck.replace(`_${sid}`,'');
-      if (Number(ouid) !== ME) {
+      const ouid = Number(ck.split('_')[0]);
+      if (ouid !== ME) {
         const ou = await fbGet(`users/${ouid}`) || {};
-        const osd = (ou.swaps_done||0)+1, opt = (ou.points||0)+10;
-        await fbPatch(`users/${ouid}`, { swaps_done:osd, points:opt, badge:calcBadge(osd,ou.special_badge||'') });
+        const osd=(ou.swaps_done||0)+1,opt=(ou.points||0)+10;
+        await fbPatch(`users/${ouid}`,{swaps_done:osd,points:opt,badge:calcBadge(osd,ou.special_badge||'')});
       }
     }
-    await fbSet(`matches/${sid}`, { completed: new Date().toLocaleString() });
-    showToast('🎉 Swap Confirmed! +10 points earned!');
-    document.getElementById('pending-confirms').innerHTML = '';
-    loadHomeStats();
-    loadMySwap();
-    loadProfile();
+    await fbSet(`matches/${sid}`,{completed:new Date().toLocaleString()});
+    toast('🎉 Swap Confirmed! +10 pts earned!');
+    document.getElementById('confirm-area').innerHTML='';
+    loadHome();
   } else {
-    showToast('⏳ Confirmation saved! Waiting for partner...');
-    loadHomeStats();
+    toast('⏳ Saved! Waiting for partner...');
+    loadHome();
   }
 }
 
-// ════════════════════════════════════════════
+async function deleteMySwap(sid) {
+  if (!confirm('Delete your swap request?')) return;
+  await fbDel(`swaps/${sid}`);
+  toast('✅ Request deleted');
+  loadHome();
+}
+
+// ══════════════════════════════════════
 //  FIND SEAT
-// ════════════════════════════════════════════
+// ══════════════════════════════════════
 let searchTimer;
-function onTrainInput() {
+function onFindInput() {
   clearTimeout(searchTimer);
-  const v = document.getElementById('find-train').value.trim();
-  if (v.length >= 4) { searchTimer = setTimeout(doSearch, 600); }
-  else { document.getElementById('find-results').innerHTML = '<div class="empty"><div class="empty-icon">🔍</div><p>Enter at least 4 digits</p></div>'; }
+  const v = document.getElementById('find-inp').value.trim();
+  if (v.length >= 4) searchTimer = setTimeout(doSearch, 500);
+  else document.getElementById('find-res').innerHTML = '<div class="empty"><div class="empty-icon">🔍</div><p>Enter at least 4 digits</p></div>';
 }
 
 async function doSearch() {
-  const train = document.getElementById('find-train').value.trim().toUpperCase();
+  const train = document.getElementById('find-inp').value.trim().toUpperCase();
   const ct    = document.getElementById('find-ct').value;
-  const el    = document.getElementById('find-results');
   if (train.length < 4) return;
-
+  const el = document.getElementById('find-res');
   el.innerHTML = '<div class="loader"><div class="spin"></div> Searching...</div>';
-  const swaps = await fbGet('swaps') || {};
-
-  // KEY FIX: compare as Number to avoid type mismatch
-  const results = Object.values(swaps).filter(s =>
-    s.status === 'active' &&
-    s.train  === train &&
-    (!ct || s.coach_type === ct) &&
-    Number(s.user_id) !== ME   // ← Fixed: force Number comparison
+  const [swaps] = await Promise.all([fbGet('swaps')]);
+  const all = swaps || {};
+  // KEY FIX: Number comparison
+  const results = Object.values(all).filter(s =>
+    s.status==='active' && s.train===train &&
+    (!ct||s.coach_type===ct) && Number(s.user_id)!==ME
   );
-
   if (!results.length) {
-    el.innerHTML = `<div class="empty"><div class="empty-icon">😔</div><p>No active swaps for Train ${esc(train)}</p><button class="btn btn-primary" style="margin-top:12px" onclick="showPage('my-swap')">🔄 Post Your Swap</button></div>`;
+    el.innerHTML = `<div class="empty"><div class="empty-icon">😔</div><p>No active swaps for Train ${esc(train)}</p><button class="btn btn-primary" style="margin-top:12px" onclick="document.querySelectorAll('.bnav-btn')[2].click()">🔄 Post Request</button></div>`;
     return;
   }
-
-  // Sort: matching berths first (smart match)
-  const mySwap = Object.values(swaps).find(s => sameUser(s.user_id));
-
+  const mySwap = Object.values(all).find(s=>sameUser(s.user_id));
   el.innerHTML = results.map(r => {
-    const isMatch = mySwap && checkMatch(mySwap, r);
+    const matched = mySwap && isMatch(mySwap, r);
     return `
-    <div class="sc ${isMatch ? 'match-card' : ''}">
-      ${isMatch ? '<div style="color:var(--green);font-size:12px;font-weight:700;margin-bottom:6px">🎯 POSSIBLE MATCH!</div>' : ''}
-      <div class="sc-hdr">
-        <div>
-          <div class="sc-name">${esc(r.name)} <span style="font-size:11px;color:var(--muted)">${esc(r.badge||'🌱')}</span></div>
-          <div class="sc-badge">🚉 Coach ${esc(r.coach)} · ${esc(r.coach_type)}</div>
-        </div>
-        <div class="sc-time">${timeAgo(r.ts)}</div>
+    <div class="sc ${matched?'match':''}">
+      ${matched?'<div style="color:var(--green);font-size:12px;font-weight:700;margin-bottom:6px">🎯 POSSIBLE MATCH!</div>':''}
+      <div class="sc-name">${esc(r.name)} <span style="font-size:11px;color:var(--muted)">${esc(r.badge||'🌱')}</span></div>
+      <div class="sc-meta">🚉 Coach <b>${esc(r.coach)}</b> · ${esc(r.coach_type)} · ${timeAgo(r.ts)}</div>
+      <div class="sc-seats">
+        💺 Has: <b>${esc(r.cur_seat)}</b> <span style="color:var(--muted)">(${esc(r.cur_berth)})</span>
+        &nbsp;→&nbsp;
+        🔄 Wants: <b>${esc(r.want_seat)||'Any'}</b> <span style="color:var(--muted)">(${esc(r.want_berth)})</span>
       </div>
-      <div class="sc-row"><span class="sc-lbl">Has</span><span>Seat <b>${esc(r.cur_seat)}</b> <span style="color:var(--muted)">(${esc(r.cur_berth)})</span></span></div>
-      <div class="sc-row"><span class="sc-lbl">Wants</span><span>Seat <b>${esc(r.want_seat)}</b> <span style="color:var(--muted)">(${esc(r.want_berth)})</span></span></div>
-      ${r.pnr ? '<div style="font-size:11px;color:var(--muted);margin-top:4px">🎫 PNR Verified</div>' : ''}
+      ${r.pnr?'<div style="font-size:11px;color:var(--muted)">🎫 PNR Verified ✅</div>':''}
       <div class="sc-acts">
         <a href="tg://user?id=${r.user_id}" class="btn btn-primary btn-sm" style="text-decoration:none">📩 Contact</a>
-        ${isMatch ? `<button class="btn btn-success btn-sm" onclick="openConfirmModal('${r.swap_id}','${esc(r.name)}')">✅ Confirm Match</button>` : ''}
+        ${matched?`<button class="btn btn-success btn-sm" onclick="openConfirmModal('${r.swap_id}','${esc(r.name)}')">✅ Confirm Match</button>`:''}
         <button class="btn btn-danger btn-sm" onclick="reportUser(${r.user_id},'${esc(r.name)}')">🚩 Report</button>
       </div>
     </div>`;
   }).join('');
 }
 
-function checkMatch(mySwap, other) {
-  if (!mySwap) return false;
-  const opp = {
-    'lower':['upper','middle','any'], 'upper':['lower','middle','any'],
-    'middle':['lower','upper','any'], 'side lower':['side upper','any'],
-    'side upper':['side lower','any'], 'window':['aisle','middle','any'],
-    'aisle':['window','middle','any'], 'any':['lower','upper','middle','side lower','side upper','window','aisle','any']
-  };
-  const nw = (mySwap.want_berth||'').toLowerCase();
-  const nc = (mySwap.cur_berth||'').toLowerCase();
-  const tw = (other.want_berth||'').toLowerCase();
-  const tc = (other.cur_berth||'').toLowerCase();
-  return (tw===nc || (opp[nc]||[]).includes(tw)) || (nw===tc || (opp[tc]||[]).includes(nw));
-}
-
-// ════════════════════════════════════════════
-//  CONFIRM MODAL (from Find page)
-// ════════════════════════════════════════════
-function openConfirmModal(otherSid, otherName) {
-  document.getElementById('confirm-modal-body').innerHTML = `
-    <p style="font-size:14px;margin-bottom:14px">Have you <b>physically exchanged seats</b> with <b>${esc(otherName)}</b>?</p>
-    <p style="font-size:12px;color:var(--muted);margin-bottom:16px">Both parties must confirm. Points (+10) will be awarded after both confirm. This cannot be undone.</p>
+function openConfirmModal(otherSid, name) {
+  document.getElementById('conf-body').innerHTML = `
+    <p style="font-size:14px;margin-bottom:10px">Did you <b>physically exchange</b> seats with <b>${esc(name)}</b>?</p>
+    <p style="font-size:12px;color:var(--muted);margin-bottom:16px;line-height:1.5">After both parties confirm, you both earn <b>+10 points</b> and badge progress. Cannot be undone.</p>
     <div style="display:flex;gap:8px">
-      <button class="btn btn-success" style="flex:1" onclick="doConfirmFromFind('${otherSid}')">✅ Yes, Swap Done!</button>
-      <button class="btn btn-secondary" style="flex:1" onclick="document.getElementById('confirm-modal').classList.remove('open')">Cancel</button>
+      <button class="btn btn-success" style="flex:1" onclick="doConfirmAfterContact('${otherSid}')">✅ Yes, Done!</button>
+      <button class="btn btn-ghost" style="flex:1" onclick="document.getElementById('conf-mo').classList.remove('open')">Cancel</button>
     </div>`;
-  document.getElementById('confirm-modal').classList.add('open');
+  document.getElementById('conf-mo').classList.add('open');
 }
 
-async function doConfirmFromFind(otherSid) {
-  document.getElementById('confirm-modal').classList.remove('open');
-
-  // Get MY swap id
+async function doConfirmAfterContact(otherSid) {
+  document.getElementById('conf-mo').classList.remove('open');
   const swaps = await fbGet('swaps') || {};
-  const mySwap = Object.values(swaps).find(s => sameUser(s.user_id));
-  if (!mySwap) { showToast('❌ You have no active swap to confirm'); return; }
-
-  // We confirm MY sid (not the other person's)
-  await confirmSwapFromApp(mySwap.swap_id);
-
-  // Also store that I confirmed against their sid
+  const mine = Object.values(swaps).find(s=>sameUser(s.user_id));
+  if (!mine) { toast('❌ Post your swap request first'); return; }
+  await confirmSwap(mine.swap_id);
   await fbSet(`confirmed/${ME}_${otherSid}`, true);
-  showToast('✅ Your confirmation saved!');
 }
 
-// ════════════════════════════════════════════
-//  MY SWAP
-// ════════════════════════════════════════════
-async function loadMySwap() {
-  const el = document.getElementById('my-swap-content');
-  const swaps = await fbGet('swaps') || {};
-  const entry = Object.entries(swaps).find(([k,v]) => sameUser(v.user_id));
-
-  if (!entry) {
-    el.innerHTML = `
-      <div class="empty"><div class="empty-icon">📋</div><p>No active swap request</p></div>
-      <div style="text-align:center;margin-top:12px">
-        <p style="font-size:13px;color:var(--muted);margin-bottom:12px">Go to the bot to post a new seat change request</p>
-        <button class="btn btn-primary" onclick="tg?.close?.()">↩ Open Bot</button>
-      </div>`;
-    return;
-  }
-
-  const [sid, s] = entry;
-  const confirmed = await fbGet('confirmed') || {};
-  const iConfirmed   = !!confirmed[`${ME}_${sid}`];
-  const theyConfirmed = Object.keys(confirmed).some(k => k.endsWith(`_${sid}`) && !k.startsWith(`${ME}_`));
-
-  el.innerHTML = `
-    <div class="card" style="border-color:rgba(79,142,247,.3)">
-      <div class="card-title">Your Active Request ✅</div>
-      <div style="margin-top:8px">
-        <div class="ir"><span class="ir-lbl">Train</span><span><b>${esc(s.train)}</b> — ${esc(s.train_name||s.train)}</span></div>
-        <div class="ir"><span class="ir-lbl">Coach</span><span><b>${esc(s.coach)}</b> (${esc(s.coach_type)})</span></div>
-        <div class="ir"><span class="ir-lbl">Has</span><span>Seat <b>${esc(s.cur_seat)}</b> (${esc(s.cur_berth)})</span></div>
-        <div class="ir"><span class="ir-lbl">Wants</span><span>Seat <b>${esc(s.want_seat)}</b> (${esc(s.want_berth)})</span></div>
-        ${s.pnr ? `<div class="ir"><span class="ir-lbl">PNR</span><span style="font-family:monospace">${esc(s.pnr)}</span></div>` : ''}
-        <div class="ir"><span class="ir-lbl">Posted</span><span>${timeAgo(s.ts)}</span></div>
-      </div>
-    </div>
-    ${iConfirmed && !theyConfirmed ? `
-      <div class="card" style="border-color:var(--yellow)">
-        <p style="color:var(--yellow);font-size:13px">⏳ You confirmed! Waiting for your swap partner to confirm...</p>
-      </div>` : ''}
-    ${theyConfirmed && !iConfirmed ? `
-      <div class="confirm-banner">
-        <div class="cb-title">🎉 Your partner confirmed!</div>
-        <p style="font-size:13px;margin-bottom:10px">Confirm from your side to earn <b>+10 points</b> and get your badge!</p>
-        <button class="btn btn-success btn-full" onclick="confirmSwapFromApp('${sid}')">✅ Confirm Swap Done — Earn +10 pts</button>
-      </div>` : ''}
-    <button class="btn btn-danger btn-full" style="margin-top:4px" onclick="deleteMySwap('${sid}')">🗑 Delete Request</button>`;
-}
-
-async function deleteMySwap(sid) {
-  if (!confirm('Delete your swap request?')) return;
-  await fbDel(`swaps/${sid}`);
-  showToast('✅ Request deleted');
-  loadMySwap();
-  loadHomeStats();
-}
-
-// ════════════════════════════════════════════
-//  PROFILE
-// ════════════════════════════════════════════
-async function loadProfile() {
-  const el = document.getElementById('profile-content');
-  const u  = await fbGet(`users/${ME}`);
-  if (!u) {
-    el.innerHTML = `<div class="empty"><div class="empty-icon">👤</div><p>Profile not found. Start the bot first!</p></div>`;
-    return;
-  }
-  const sd  = u.swaps_done||0, pts = u.points||0;
-  const bdg = calcBadge(sd, u.special_badge||'');
-  const {pct, label} = progressBar(sd);
-  el.innerHTML = `
-    <div class="ph">
-      <div class="pa">👤</div>
-      <div class="pname">${esc(u.name||tgUser.first_name)}</div>
-      <div class="pbadge">@${esc(u.username||'no username')}</div>
-      <div style="font-size:16px;margin-top:6px">${esc(bdg)}</div>
-      ${u.special_user ? '<div style="color:var(--yellow);font-size:13px;margin-top:3px">🌟 Official SeatSwap Family</div>' : ''}
-    </div>
-    <div class="sgrid">
-      <div class="sbox"><div class="snum">${sd}</div><div class="slbl">Swaps Done</div></div>
-      <div class="sbox"><div class="snum">${pts}</div><div class="slbl">Points</div></div>
-    </div>
-    <div class="card">
-      <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px">
-        <span>${esc(bdg)}</span>
-        <span style="color:var(--muted)">${label}</span>
-      </div>
-      <div class="prog-track"><div class="prog-fill" style="width:${pct}%"></div></div>
-    </div>
-    <div class="card">
-      <div class="ir"><span class="ir-lbl">Joined</span><span>${esc(u.joined||'—')}</span></div>
-      <div class="ir"><span class="ir-lbl">Language</span><span>${({'en':'English 🇬🇧','hi':'हिन्दी 🇮🇳','bn':'বাংলা 🇧🇩','ur':'اردو 🇵🇰'})[u.lang]||'English'}</span></div>
-      <div class="ir"><span class="ir-lbl">Account</span><span>${u.banned?'<span style="color:var(--red)">🚫 Suspended</span>':'<span style="color:var(--green)">✅ Active</span>'}</span></div>
-      <div class="ir"><span class="ir-lbl">Reports</span><span>${u.reports||0}</span></div>
-    </div>
-    <div class="card">
-      <div class="card-title">💬 Send Feedback</div>
-      <textarea class="inp" id="fb-text" rows="3" placeholder="Your message, suggestion or problem..." style="resize:none;margin-bottom:8px"></textarea>
-      <button class="btn btn-primary btn-full" onclick="submitFeedback()">📩 Send</button>
-    </div>`;
-}
-
-async function submitFeedback() {
-  const msg = document.getElementById('fb-text')?.value?.trim();
-  if (!msg) { showToast('Write something first'); return; }
-  const u = await fbGet(`users/${ME}`) || {};
-  await fbSet(`feedbacks/${ME}_${Date.now()}`, {
-    user_id: ME, name: u.name||'', username: u.username||'',
-    message: msg, ts: new Date().toLocaleString()
-  });
-  showToast('✅ Feedback sent! Thank you.');
-  document.getElementById('fb-text').value = '';
-}
-
-// ════════════════════════════════════════════
-//  REPORT
-// ════════════════════════════════════════════
 async function reportUser(uid, name) {
-  if (Number(uid) === ME) { showToast('❌ Cannot report yourself'); return; }
+  if (Number(uid)===ME) { toast('Cannot report yourself'); return; }
   if (!confirm(`Report ${name}?`)) return;
   const key = `reports/${ME}_${uid}`;
-  const already = await fbGet(key);
-  if (already) { showToast('Already reported'); return; }
+  if (await fbGet(key)) { toast('Already reported'); return; }
   await fbSet(key, true);
   const u = await fbGet(`users/${uid}`) || {};
   const cnt = (u.reports||0)+1;
-  await fbPatch(`users/${uid}`, { reports: cnt });
-  if (cnt >= 3) {
-    await fbPatch(`users/${uid}`, { banned: true });
-    showToast('⚠️ User reported & auto-banned (3/3)');
-  } else {
-    showToast(`🚩 Reported (${cnt}/3 before ban)`);
+  await fbPatch(`users/${uid}`,{reports:cnt});
+  if (cnt>=3) { await fbPatch(`users/${uid}`,{banned:true}); toast('⚠️ User reported & banned (3/3)'); }
+  else toast(`🚩 Reported (${cnt}/3)`);
+}
+
+// ══════════════════════════════════════
+//  POST SWAP (5 steps)
+// ══════════════════════════════════════
+const CT = {
+  SL:{l:'🛏 Sleeper',max:72,c:Array.from({length:12},(_,i)=>`S${i+1}`)},
+  '3A':{l:'❄️ AC 3 Tier',max:64,c:Array.from({length:6},(_,i)=>`B${i+1}`)},
+  '2A':{l:'❄️ AC 2 Tier',max:46,c:Array.from({length:4},(_,i)=>`A${i+1}`)},
+  '1A':{l:'❄️ First Class',max:24,c:['H1','H2']},
+  CC:{l:'💺 Chair Car',max:78,c:Array.from({length:8},(_,i)=>`C${i+1}`)},
+  EC:{l:'💺 Exec Chair',max:56,c:['EC1','EC2','EC3']},
+  GN:{l:'🚃 General',max:200,c:['GS1','GS2','GS3']}
+};
+const BERTHS = {SL:['Lower','Middle','Upper','Side Lower','Side Upper'],'3A':['Lower','Middle','Upper','Side Lower','Side Upper'],'2A':['Lower','Upper'],'1A':['Lower','Upper'],CC:['Window','Middle','Aisle'],EC:['Window','Middle','Aisle'],GN:['Any']};
+
+function autoBerth(n,ct) {
+  const s=parseInt(n); if(!s) return'Any';
+  if(ct==='SL'||ct==='3A') return['Lower','Middle','Upper','Lower','Middle','Upper','Side Lower','Side Upper'][(s-1)%8];
+  if(ct==='2A') return (s-1)%4<2?'Lower':'Upper';
+  if(ct==='1A') return s%2===1?'Lower':'Upper';
+  if(ct==='CC'||ct==='EC') return['Window','Middle','Aisle'][(s-1)%3];
+  return'Any';
+}
+
+let postData={}, postStep=1;
+function initPost() { postStep=1; postData={}; renderPost(); }
+
+function renderPost() {
+  const dots = Array.from({length:5},(_,i)=>`<div class="dot ${i<postStep-1?'done':i===postStep-1?'active':''}"></div>`).join('');
+  document.getElementById('post-dots').innerHTML = dots;
+  const d = postData;
+  let html = '';
+  if (postStep===1) html=`
+    <div class="card">
+      <div class="card-hdr">Step 1 — Train Number</div>
+      <div class="inp-grp">
+        <input class="inp" id="p-train" type="number" placeholder="e.g. 12301" value="${esc(d.train||'')}" oninput="onTrainInput(this.value)">
+        <div id="train-name" style="font-size:12px;color:var(--green);margin-top:5px">${d.trainName?'✅ '+esc(d.trainName):''}</div>
+      </div>
+      <button class="btn btn-primary btn-full" onclick="postNext()">Continue →</button>
+    </div>`;
+  else if (postStep===2) html=`
+    <div class="card">
+      <div class="card-hdr">Step 2 — Coach Type & Number</div>
+      <p style="font-size:12px;color:var(--muted);margin-bottom:10px">🚆 ${esc(d.train)}${d.trainName?' — '+esc(d.trainName):''}</p>
+      <div class="inp-lbl">Coach Type</div>
+      <div class="ct-grid">${Object.entries(CT).map(([k,v])=>`<div class="ct-btn ${d.ct===k?'sel':''}" onclick="selCT('${k}')">${v.l}</div>`).join('')}</div>
+      ${d.ct?`<div class="inp-lbl" style="margin-top:12px">Coach Number</div><div class="coach-grid">${CT[d.ct].c.map(c=>`<div class="coach-btn ${d.coach===c?'sel':''}" onclick="selCoach('${c}')">${c}</div>`).join('')}</div>`:''}
+      ${d.ct&&d.coach?`<button class="btn btn-primary btn-full" style="margin-top:14px" onclick="postNext()">Continue →</button>`:''}
+      <button class="btn btn-ghost btn-full" style="margin-top:8px" onclick="postStep=1;renderPost()">← Back</button>
+    </div>`;
+  else if (postStep===3) html=`
+    <div class="card">
+      <div class="card-hdr">Step 3 — Your Current Seat</div>
+      <p style="font-size:12px;color:var(--muted);margin-bottom:10px">🚉 Coach <b>${esc(d.coach)}</b> (${esc(d.ct)}) — seats 1 to ${CT[d.ct]?.max||72}</p>
+      <div class="inp-grp">
+        <label class="inp-lbl">Your Seat Number</label>
+        <input class="inp" id="p-cseat" type="number" placeholder="e.g. 23" value="${esc(d.cseat||'')}" oninput="onCSeatInput(this.value)">
+        <div id="cseat-berth" style="font-size:12px;color:var(--muted);margin-top:5px">${d.cseat?'Auto-detected: <b>'+autoBerth(d.cseat,d.ct)+'</b>':''}</div>
+      </div>
+      <button class="btn btn-primary btn-full" onclick="postNext()">Continue →</button>
+      <button class="btn btn-ghost btn-full" style="margin-top:8px" onclick="postStep=2;renderPost()">← Back</button>
+    </div>`;
+  else if (postStep===4) html=`
+    <div class="card">
+      <div class="card-hdr">Step 4 — Seat You Want</div>
+      <p style="font-size:12px;color:var(--muted);margin-bottom:10px">Your seat: <b>${esc(d.cseat)}</b> (${esc(d.cberth)})</p>
+      <div class="inp-grp">
+        <label class="inp-lbl">Preferred Seat Number (optional)</label>
+        <input class="inp" id="p-wseat" type="number" placeholder="Leave empty for Any" value="${d.wseat&&d.wseat!='Any'?esc(d.wseat):''}">
+      </div>
+      <div class="inp-lbl">Berth Type You Want</div>
+      <div class="berth-grid">
+        ${(BERTHS[d.ct]||['Lower','Upper']).map(b=>`<div class="berth-btn ${d.wberth===b?'sel':''}" onclick="selWBerth('${b}')">${b}</div>`).join('')}
+        <div class="berth-btn ${d.wberth==='Any'?'sel':''}" onclick="selWBerth('Any')">🔀 Any</div>
+      </div>
+      ${d.wberth?`<button class="btn btn-primary btn-full" style="margin-top:14px" onclick="postNext()">Continue →</button>`:''}
+      <button class="btn btn-ghost btn-full" style="margin-top:8px" onclick="postStep=3;renderPost()">← Back</button>
+    </div>`;
+  else if (postStep===5) html=`
+    <div class="card">
+      <div class="card-hdr">Step 5 — Review & Post</div>
+      <div style="font-size:13px;margin-bottom:14px">
+        <div class="ir"><span class="ir-lbl">Train</span><span class="ir-val"><b>${esc(d.train)}</b>${d.trainName?' — '+esc(d.trainName):''}</span></div>
+        <div class="ir"><span class="ir-lbl">Coach</span><span class="ir-val"><b>${esc(d.coach)}</b> (${esc(d.ct)})</span></div>
+        <div class="ir"><span class="ir-lbl">Has</span><span class="ir-val">Seat <b>${esc(d.cseat)}</b> (${esc(d.cberth)})</span></div>
+        <div class="ir"><span class="ir-lbl">Wants</span><span class="ir-val"><b>${esc(d.wberth)}</b>${d.wseat&&d.wseat!='Any'?' — Seat '+esc(d.wseat):''}</span></div>
+      </div>
+      <div class="inp-grp">
+        <label class="inp-lbl">PNR Number (optional — builds trust)</label>
+        <input class="inp" id="p-pnr" type="number" placeholder="10-digit PNR" value="${esc(d.pnr||'')}">
+      </div>
+      <button class="btn btn-success btn-full" onclick="postSubmit()">✅ Post Swap Request</button>
+      <button class="btn btn-ghost btn-full" style="margin-top:8px" onclick="postStep=4;renderPost()">← Back</button>
+    </div>`;
+  document.getElementById('post-content').innerHTML = html;
+}
+
+const TRAINS_DB = {"12301":"Howrah Rajdhani","12302":"New Delhi Rajdhani","12303":"Poorva Express","12305":"Howrah Rajdhani (Patna)","12309":"Rajendra Nagar Rajdhani","12313":"Sealdah Rajdhani","12321":"Howrah Mumbai Mail","12343":"Darjeeling Mail","12345":"Saraighat Express","12381":"Poorabh Express","12423":"Dibrugarh Rajdhani","12431":"Trivandrum Rajdhani","12505":"Northeast Express","12557":"Sapt Kranti","12559":"Shiv Ganga Express","12601":"Mangalore Express","12615":"Grand Trunk Express","12621":"Tamil Nadu Express","12627":"Karnataka Express","12657":"Chennai Mail","12801":"Purushottam Express","12875":"Neelachal Express","12951":"Mumbai Rajdhani","12952":"New Delhi Rajdhani","13005":"Howrah Amritsar Exp","13065":"HWH-AV Amrit Bharat","15671":"Kamakhya Rohtak AB","15949":"Dibrugarh AB","16121":"Tambaram-TVC AB","16329":"Nagercoil-MAS AB","22691":"Rajdhani Express","22435":"Varanasi Vande Bharat","22589":"Banaras Amrit Bharat","20901":"Mumbai-Ahm VB","12017":"Howrah Shatabdi","12041":"NJP Shatabdi","12259":"Sealdah Duronto","12001":"Bhopal Shatabdi","11061":"LTT Jabalpur Exp","11071":"Kamayani Express"};
+
+function onTrainInput(v) {
+  if (postData.train!==v.toUpperCase()) {
+    postData.train = v.toUpperCase();
+    const name = TRAINS_DB[v.toUpperCase()] || TRAINS_DB[v] || '';
+    postData.trainName = name;
+    const el = document.getElementById('train-name');
+    if (el) el.innerHTML = name ? '✅ '+esc(name) : (v.length>=4?'<span style="color:var(--muted)">Train not in database — you can still proceed</span>':'');
   }
 }
+function onCSeatInput(v) {
+  if (postData.cseat!==v) {
+    postData.cseat=v;
+    const el=document.getElementById('cseat-berth');
+    if(el&&v) el.innerHTML=`Auto-detected: <b>${autoBerth(v,postData.ct)}</b>`;
+  }
+}
+function selCT(k)     { postData.ct=k; postData.coach=''; renderPost(); }
+function selCoach(c)  { postData.coach=c; renderPost(); }
+function selWBerth(b) { postData.wberth=b; renderPost(); }
 
-// ════════════════════════════════════════════
-//  ADMIN — STATS
-// ════════════════════════════════════════════
-async function loadAdminStats() {
-  if (!isAdmin) return;
-  const [swaps, users, reports, fbs] = await Promise.all([fbGet('swaps'),fbGet('users'),fbGet('all_reports'),fbGet('feedbacks')]);
-  const sl = swaps ? Object.values(swaps) : [];
-  const ul = users ? Object.values(users) : [];
-  document.getElementById('a-users').textContent   = ul.length;
-  document.getElementById('a-active').textContent  = sl.filter(s=>s.status==='active').length;
-  document.getElementById('a-done').textContent    = ul.reduce((a,u)=>a+(u.swaps_done||0),0);
-  document.getElementById('a-banned').textContent  = ul.filter(u=>u.banned).length;
-  document.getElementById('a-reports').textContent = reports ? Object.keys(reports).length : 0;
-  document.getElementById('a-fbs').textContent     = fbs ? Object.keys(fbs).length : 0;
-  const bs = await fbGet('bot_status');
-  document.getElementById('db-status').innerHTML = bs
-    ? `<span style="color:var(--green)">🟢 Online</span> · Boot: ${esc(bs.boot||'—')}`
-    : `<span style="color:var(--red)">🔴 Offline</span>`;
+function postNext() {
+  const d=postData;
+  if (postStep===1) {
+    const v=document.getElementById('p-train')?.value?.trim();
+    if(!v||!/^\d{4,6}$/.test(v)){toast('Enter 4–6 digit train number');return;}
+    d.train=v.toUpperCase(); d.trainName=TRAINS_DB[d.train]||''; postStep=2;
+  } else if (postStep===2) {
+    if(!d.ct){toast('Select coach type');return;} if(!d.coach){toast('Select coach number');return;} postStep=3;
+  } else if (postStep===3) {
+    const v=document.getElementById('p-cseat')?.value?.trim();
+    const max=CT[d.ct]?.max||72;
+    if(!v||!Number.isInteger(+v)||+v<1||+v>max){toast(`Enter seat 1–${max}`);return;}
+    d.cseat=v; d.cberth=autoBerth(v,d.ct); postStep=4;
+  } else if (postStep===4) {
+    const sv=document.getElementById('p-wseat')?.value?.trim();
+    const max=CT[d.ct]?.max||72;
+    if(sv&&(!Number.isInteger(+sv)||+sv<1||+sv>max)){toast(`Seat 1–${max} or leave empty`);return;}
+    if(!d.wberth){toast('Select berth type');return;}
+    d.wseat=sv||'Any'; postStep=5;
+  }
+  renderPost();
 }
 
-// ════════════════════════════════════════════
-//  ADMIN — USERS
-// ════════════════════════════════════════════
-let allUsers = {};
-async function loadUsers() {
-  if (!isAdmin) return;
-  allUsers = await fbGet('users') || {};
-  renderUsers(Object.entries(allUsers));
+async function postSubmit() {
+  const d=postData;
+  const pnrV=document.getElementById('p-pnr')?.value?.trim();
+  if(pnrV&&!/^\d{10}$/.test(pnrV)){toast('PNR must be 10 digits or empty');return;}
+  d.pnr=pnrV||'';
+  // Delete old swap first
+  const old=await fbGet('swaps')||{};
+  for(const[k,v] of Object.entries(old)) if(sameUser(v.user_id)) await fbDel(`swaps/${k}`);
+  // Save new
+  const sid=Date.now().toString(36)+Math.random().toString(36).slice(2,5);
+  const dbUser=await fbGet(`users/${ME}`)||{};
+  await fbSet(`swaps/${sid}`,{
+    swap_id:sid, user_id:ME, name:tgUser.first_name, username:tgUser.username||'',
+    badge:calcBadge(dbUser.swaps_done||0,dbUser.special_badge||''),
+    train:d.train, train_name:d.trainName||d.train,
+    coach_type:d.ct, coach:d.coach, cur_seat:d.cseat, cur_berth:d.cberth,
+    want_seat:d.wseat, want_berth:d.wberth, pnr:d.pnr, status:'active',
+    ts:new Date().toLocaleString('en-IN',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit',hour12:true}).replace(',',''),
+  });
+  toast('✅ Request posted!');
+  postStep=1; postData={};
+  document.querySelectorAll('.bnav-btn')[0].click();
 }
-function filterUsers() {
-  const q = document.getElementById('user-search').value.toLowerCase();
-  renderUsers(Object.entries(allUsers).filter(([uid,u]) => (u.name||'').toLowerCase().includes(q)||(u.username||'').toLowerCase().includes(q)));
+
+// ══════════════════════════════════════
+//  PROFILE
+// ══════════════════════════════════════
+async function loadProfile() {
+  const el=document.getElementById('profile-content');
+  const u=await fbGet(`users/${ME}`);
+  if(!u){el.innerHTML=`<div class="empty"><div class="empty-icon">👤</div><p>Profile not found.<br>Start the bot first!</p></div>`;return;}
+  const sd=u.swaps_done||0,pt=u.points||0,bdg=calcBadge(sd,u.special_badge||'');
+  const {pct,lbl}=calcProgress(sd);
+  el.innerHTML=`
+    <div class="profile-hero">
+      <div class="profile-av">${(tgUser.first_name||'U')[0].toUpperCase()}</div>
+      <div class="profile-name">${esc(tgUser.first_name||'')}${tgUser.last_name?' '+esc(tgUser.last_name):''}</div>
+      <div class="profile-bdg">${esc(bdg)}</div>
+      ${u.special_user?'<div style="color:var(--yellow);font-size:13px;margin-top:4px">🌟 Official SeatSwap Family</div>':''}
+    </div>
+    <div class="stats-grid">
+      <div class="stat-box"><div class="stat-num">${sd}</div><div class="stat-lbl">Swaps Done</div></div>
+      <div class="stat-box"><div class="stat-num">${pt}</div><div class="stat-lbl">Points</div></div>
+    </div>
+    <div class="card">
+      <div class="card-hdr">📈 Badge Progress</div>
+      <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px"><span>${esc(bdg)}</span><span style="color:var(--muted)">${esc(lbl)}</span></div>
+      <div class="prog-track"><div class="prog-fill" style="width:${pct}%"></div></div>
+    </div>
+    <div class="card">
+      <div class="ir"><span class="ir-lbl">Telegram ID</span><span class="ir-val" style="font-family:monospace">${ME}</span></div>
+      <div class="ir"><span class="ir-lbl">Username</span><span class="ir-val">@${esc(tgUser.username||'not set')}</span></div>
+      <div class="ir"><span class="ir-lbl">Joined</span><span class="ir-val">${esc(u.joined||'—')}</span></div>
+      <div class="ir"><span class="ir-lbl">Account</span><span class="ir-val">${u.banned?'<span style="color:var(--red)">🚫 Suspended</span>':'<span style="color:var(--green)">✅ Active</span>'}</span></div>
+      <div class="ir"><span class="ir-lbl">Reports on you</span><span class="ir-val">${u.reports||0}</span></div>
+    </div>
+    <div class="card">
+      <div class="card-hdr">💬 Send Feedback</div>
+      <textarea class="inp" id="fb-txt" rows="3" placeholder="Your message, suggestion or problem..."></textarea>
+      <button class="btn btn-primary btn-full" style="margin-top:8px" onclick="sendFeedback()">📩 Send to Admin</button>
+    </div>`;
 }
-function renderUsers(entries) {
-  const el = document.getElementById('users-list');
-  if (!entries.length) { el.innerHTML = '<div class="empty"><div class="empty-icon">👥</div><p>No users found</p></div>'; return; }
-  el.innerHTML = entries.slice(0,50).map(([uid,u]) => `
+
+async function sendFeedback() {
+  const msg=document.getElementById('fb-txt')?.value?.trim();
+  if(!msg){toast('Write something first');return;}
+  const u=await fbGet(`users/${ME}`)||{};
+  await fbSet(`feedbacks/${ME}_${Date.now()}`,{user_id:ME,name:u.name||'',username:u.username||'',message:msg,ts:new Date().toLocaleString()});
+  toast('✅ Feedback sent!');
+  document.getElementById('fb-txt').value='';
+}
+
+// ══════════════════════════════════════
+//  ADMIN PANEL
+// ══════════════════════════════════════
+let currentAdmTab = 'stats';
+function setAdmTab(tab, el) {
+  document.querySelectorAll('.adm-tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  currentAdmTab = tab;
+  loadAdmTab(tab);
+}
+function loadAdmTab(tab) {
+  if (!isAdmin) { document.getElementById('adm-content').innerHTML='<div class="empty"><div class="empty-icon">🔐</div><p>Admin access required</p></div>'; return; }
+  const el=document.getElementById('adm-content');
+  el.innerHTML='<div class="loader"><div class="spin"></div> Loading...</div>';
+  if(tab==='stats')  loadAdmStats();
+  if(tab==='users')  loadAdmUsers();
+  if(tab==='swaps')  loadAdmSwaps();
+  if(tab==='fbs')    loadAdmFeedbacks();
+  if(tab==='tools')  loadAdmTools();
+}
+
+async function loadAdmStats() {
+  const[swaps,users,reports,fbs,matches]=await Promise.all([fbGet('swaps'),fbGet('users'),fbGet('all_reports'),fbGet('feedbacks'),fbGet('matches')]);
+  const sl=swaps?Object.values(swaps):[];
+  const ul=users?Object.values(users):[];
+  document.getElementById('adm-content').innerHTML=`
+    <div class="stats-grid">
+      <div class="stat-box"><div class="stat-num">${ul.length}</div><div class="stat-lbl">Total Users</div></div>
+      <div class="stat-box"><div class="stat-num">${sl.filter(s=>s.status==='active').length}</div><div class="stat-lbl">Active Swaps</div></div>
+      <div class="stat-box"><div class="stat-num">${ul.reduce((a,u)=>a+(u.swaps_done||0),0)}</div><div class="stat-lbl">Swaps Done</div></div>
+      <div class="stat-box"><div class="stat-num">${ul.filter(u=>u.banned).length}</div><div class="stat-lbl">Banned</div></div>
+      <div class="stat-box"><div class="stat-num">${reports?Object.keys(reports).length:0}</div><div class="stat-lbl">Reports</div></div>
+      <div class="stat-box"><div class="stat-num">${fbs?Object.keys(fbs).length:0}</div><div class="stat-lbl">Feedbacks</div></div>
+      <div class="stat-box"><div class="stat-num">${matches?Object.keys(matches).length:0}</div><div class="stat-lbl">Confirmed</div></div>
+      <div class="stat-box"><div class="stat-num">${new Set(sl.filter(s=>s.status==='active').map(s=>s.train)).size}</div><div class="stat-lbl">Active Trains</div></div>
+    </div>
+    <button class="btn btn-ghost btn-full" onclick="loadAdmStats()">🔄 Refresh</button>`;
+}
+
+let allUsersCache = {};
+async function loadAdmUsers() {
+  allUsersCache = await fbGet('users') || {};
+  renderAdmUsers(Object.entries(allUsersCache));
+}
+function renderAdmUsers(entries) {
+  if (!entries.length) { document.getElementById('adm-content').innerHTML='<div class="empty"><div class="empty-icon">👥</div><p>No users</p></div>'; return; }
+  document.getElementById('adm-content').innerHTML=`
+    <input class="inp" placeholder="🔍 Search name or username" oninput="filterAdmUsers(this.value)" style="margin-bottom:12px">
+    <div id="users-list"></div>`;
+  document.getElementById('users-list').innerHTML = entries.slice(0,50).map(([uid,u])=>`
     <div class="ur">
-      <div>
+      <div class="ur-av">${(u.name||'U')[0]}</div>
+      <div class="ur-info">
         <div class="ur-name">${esc(u.name||'?')} ${u.banned?'🚫':''} ${u.special_user?'🌟':''}</div>
-        <div class="ur-meta">@${esc(u.username||'—')} · ${esc(u.badge||'🌱')} · ${u.swaps_done||0} swaps</div>
+        <div class="ur-meta">@${esc(u.username||'—')} · ${esc(calcBadge(u.swaps_done||0,u.special_badge||''))} · ${u.swaps_done||0} swaps · ${u.points||0} pts</div>
       </div>
       <div class="ur-acts">
-        <button class="btn btn-secondary btn-sm" onclick="openUserModal('${uid}')">👁</button>
-        <button class="btn ${u.banned?'btn-success':'btn-danger'} btn-sm" onclick="${u.banned?'unbanUser':'banUser'}('${uid}','${esc(u.name)}')">
+        <button class="btn btn-ghost btn-sm" onclick="openUserModal('${uid}')">👁</button>
+        <button class="btn ${u.banned?'btn-success':'btn-danger'} btn-sm" onclick="${u.banned?'unbanUser':'banUser'}('${uid}','${esc(u.name||uid)}')">
           ${u.banned?'✅':'🚫'}
         </button>
       </div>
     </div>`).join('');
 }
-const SB = {Master:'👑 Master',VIP:'⭐ VIP',Trusted:'🛡 Trusted',Premium:'💎 Premium',Family:'👨‍👩‍👧‍👦 Family',Official:'✅ Official'};
+function filterAdmUsers(q) {
+  const filtered=Object.entries(allUsersCache).filter(([uid,u])=>(u.name||'').toLowerCase().includes(q.toLowerCase())||(u.username||'').toLowerCase().includes(q.toLowerCase()));
+  document.getElementById('users-list').innerHTML = filtered.slice(0,50).map(([uid,u])=>`
+    <div class="ur">
+      <div class="ur-av">${(u.name||'U')[0]}</div>
+      <div class="ur-info">
+        <div class="ur-name">${esc(u.name||'?')} ${u.banned?'🚫':''} ${u.special_user?'🌟':''}</div>
+        <div class="ur-meta">@${esc(u.username||'—')} · ${esc(calcBadge(u.swaps_done||0,u.special_badge||''))} · ${u.swaps_done||0} swaps</div>
+      </div>
+      <div class="ur-acts">
+        <button class="btn btn-ghost btn-sm" onclick="openUserModal('${uid}')">👁</button>
+        <button class="btn ${u.banned?'btn-success':'btn-danger'} btn-sm" onclick="${u.banned?'unbanUser':'banUser'}('${uid}','${esc(u.name||uid)}')">
+          ${u.banned?'✅':'🚫'}
+        </button>
+      </div>
+    </div>`).join('');
+}
+
+const SPEC_BADGES = {'👑 Master':'👑 Master','⭐ VIP':'⭐ VIP','🛡 Trusted':'🛡 Trusted','💎 Premium':'💎 Premium','👨‍👩‍👧‍👦 Family':'👨‍👩‍👧‍👦 Family','✅ Official':'✅ Official'};
+let selectedBadge='';
 
 function openUserModal(uid) {
-  const u = allUsers[uid]; if (!u) return;
-  document.getElementById('modal-title').textContent = `👤 ${u.name}`;
-  document.getElementById('modal-body').innerHTML = `
-    <div style="font-size:13px">
-      <div class="ir"><span class="ir-lbl">ID</span><span style="font-family:monospace">${uid}</span></div>
-      <div class="ir"><span class="ir-lbl">Username</span><span>@${esc(u.username||'—')}</span></div>
-      <div class="ir"><span class="ir-lbl">Badge</span><span>${esc(u.badge||'—')}</span></div>
-      <div class="ir"><span class="ir-lbl">Special</span><span>${esc(u.special_badge||'None')}</span></div>
-      <div class="ir"><span class="ir-lbl">Swaps</span><span>${u.swaps_done||0}</span></div>
-      <div class="ir"><span class="ir-lbl">Points</span><span>${u.points||0}</span></div>
-      <div class="ir"><span class="ir-lbl">Reports</span><span>${u.reports||0}</span></div>
-      <div class="ir"><span class="ir-lbl">Joined</span><span>${esc(u.joined||'—')}</span></div>
-      <div class="ir"><span class="ir-lbl">Status</span><span>${u.banned?'🚫 Banned':'✅ Active'}</span></div>
+  const u=allUsersCache[uid]; if(!u) return;
+  document.getElementById('um-title').textContent=`👤 ${u.name}`;
+  document.getElementById('um-body').innerHTML=`
+    <div style="font-size:13px;margin-bottom:12px">
+      <div class="ir"><span class="ir-lbl">ID</span><span class="ir-val" style="font-family:monospace">${uid}</span></div>
+      <div class="ir"><span class="ir-lbl">Username</span><span class="ir-val">@${esc(u.username||'—')}</span></div>
+      <div class="ir"><span class="ir-lbl">Badge</span><span class="ir-val">${esc(u.badge||'—')}</span></div>
+      <div class="ir"><span class="ir-lbl">Special Badge</span><span class="ir-val">${esc(u.special_badge||'None')}</span></div>
+      <div class="ir"><span class="ir-lbl">Swaps Done</span><span class="ir-val">${u.swaps_done||0}</span></div>
+      <div class="ir"><span class="ir-lbl">Points</span><span class="ir-val">${u.points||0}</span></div>
+      <div class="ir"><span class="ir-lbl">Reports</span><span class="ir-val">${u.reports||0}</span></div>
+      <div class="ir"><span class="ir-lbl">Status</span><span class="ir-val">${u.banned?'🚫 Banned':'✅ Active'}</span></div>
+      <div class="ir"><span class="ir-lbl">Family</span><span class="ir-val">${u.special_user?'🌟 Yes':'No'}</span></div>
+      <div class="ir"><span class="ir-lbl">Joined</span><span class="ir-val">${esc(u.joined||'—')}</span></div>
     </div>
-    <hr/>
-    <div style="display:flex;flex-wrap:wrap;gap:7px;margin-bottom:10px">
-      ${Object.entries(SB).map(([k,v])=>`<button class="btn btn-secondary btn-sm" onclick="giveBadge('${uid}','${esc(v)}')">${esc(v)}</button>`).join('')}
-    </div>
-    <div style="display:flex;gap:7px">
-      <button class="btn btn-secondary btn-sm" onclick="setFamily('${uid}','${esc(u.name)}')">🌟 Set Family</button>
-      <button class="btn ${u.banned?'btn-success':'btn-danger'} btn-sm" onclick="${u.banned?'unbanUser':'banUser'}('${uid}','${esc(u.name)}')">${u.banned?'✅ Unban':'🚫 Ban'}</button>
-      <button class="btn btn-danger btn-sm" onclick="removeBadge('${uid}')">🗑 Remove Badge</button>
+    <div style="font-size:12px;font-weight:700;color:var(--muted);margin-bottom:8px">🏅 GIVE BADGE</div>
+    <div class="badge-grid">${Object.keys(SPEC_BADGES).map(b=>`<div class="badge-chip" onclick="selBadge(this,'${esc(b)}')">${esc(b)}</div>`).join('')}</div>
+    <div style="display:flex;gap:7px;margin-top:10px;flex-wrap:wrap">
+      <button class="btn btn-success btn-sm" onclick="giveBadge('${uid}')">✅ Give Selected Badge</button>
+      <button class="btn btn-ghost btn-sm" onclick="removeBadge('${uid}','${esc(u.name)}')">🗑 Remove Badge</button>
+      <button class="btn btn-warn btn-sm" onclick="setFamily('${uid}','${esc(u.name)}')">🌟 Set as Family</button>
+      <button class="btn ${u.banned?'btn-success':'btn-danger'} btn-sm" onclick="${u.banned?'unbanUser':'banUser'}('${uid}','${esc(u.name||uid)}');document.getElementById('user-mo').classList.remove('open')">
+        ${u.banned?'✅ Unban':'🚫 Ban User'}
+      </button>
     </div>`;
-  document.getElementById('user-modal').classList.add('open');
+  document.getElementById('user-mo').classList.add('open');
 }
-function closeModal(e) {
-  if (e.target.classList.contains('mo')) e.target.classList.remove('open');
-}
-async function banUser(uid,name) { if(!confirm(`Ban ${name}?`))return; await fbPatch(`users/${uid}`,{banned:true}); showToast(`🚫 ${name} banned`); loadUsers(); document.getElementById('user-modal').classList.remove('open'); }
-async function unbanUser(uid,name) { await fbPatch(`users/${uid}`,{banned:false,reports:0}); showToast(`✅ ${name} unbanned`); loadUsers(); document.getElementById('user-modal').classList.remove('open'); }
-async function giveBadge(uid,val) { await fbPatch(`users/${uid}`,{special_badge:val,badge:val}); showToast(`🏅 ${val} given`); loadUsers(); document.getElementById('user-modal').classList.remove('open'); }
-async function removeBadge(uid) { await fbPatch(`users/${uid}`,{special_badge:''}); showToast('Badge removed'); loadUsers(); document.getElementById('user-modal').classList.remove('open'); }
-async function setFamily(uid,name) { await fbPatch(`users/${uid}`,{special_user:true,badge:'🌟 Official SeatSwap Family'}); showToast(`🌟 ${name} set as Family`); loadUsers(); document.getElementById('user-modal').classList.remove('open'); }
 
-// ════════════════════════════════════════════
-//  ADMIN — SWAPS
-// ════════════════════════════════════════════
-async function loadAdminSwaps() {
-  if (!isAdmin) return;
-  const el = document.getElementById('admin-swaps-list');
-  const swaps = await fbGet('swaps') || {};
-  const list = Object.entries(swaps).filter(([k,v])=>v.status==='active');
-  if (!list.length) { el.innerHTML = '<div class="empty"><div class="empty-icon">🔄</div><p>No active swaps</p></div>'; return; }
-  el.innerHTML = list.map(([sid,s]) => `
+function selBadge(el, b) { selectedBadge=b; document.querySelectorAll('.badge-chip').forEach(c=>c.classList.remove('sel')); el.classList.add('sel'); }
+async function giveBadge(uid) {
+  if(!selectedBadge){toast('Select a badge first');return;}
+  await fbPatch(`users/${uid}`,{special_badge:selectedBadge,badge:selectedBadge});
+  toast(`✅ ${selectedBadge} given!`); document.getElementById('user-mo').classList.remove('open'); loadAdmUsers();
+}
+async function removeBadge(uid,name) { await fbPatch(`users/${uid}`,{special_badge:''}); toast(`✅ Badge removed from ${name}`); document.getElementById('user-mo').classList.remove('open'); loadAdmUsers(); }
+async function setFamily(uid,name) { await fbPatch(`users/${uid}`,{special_user:true,badge:'🌟 Official SeatSwap Family'}); toast(`🌟 ${name} set as Family`); document.getElementById('user-mo').classList.remove('open'); loadAdmUsers(); }
+async function banUser(uid,name) { if(!confirm(`Ban ${name}?`))return; await fbPatch(`users/${uid}`,{banned:true}); toast(`🚫 ${name} banned`); loadAdmUsers(); }
+async function unbanUser(uid,name) { await fbPatch(`users/${uid}`,{banned:false,reports:0}); toast(`✅ ${name} unbanned`); loadAdmUsers(); }
+
+async function loadAdmSwaps() {
+  const swaps=await fbGet('swaps')||{};
+  const list=Object.entries(swaps).filter(([k,v])=>v.status==='active');
+  if(!list.length){document.getElementById('adm-content').innerHTML='<div class="empty"><div class="empty-icon">🔄</div><p>No active swaps</p></div>';return;}
+  document.getElementById('adm-content').innerHTML=list.map(([sid,s])=>`
     <div class="sc">
-      <div class="sc-hdr">
-        <div>
-          <div class="sc-name">${esc(s.name)} <span style="color:var(--muted);font-size:11px">ID:${s.user_id}</span></div>
-          <div class="sc-badge">Train ${esc(s.train)} · ${esc(s.coach)}</div>
-        </div>
-        <div class="sc-time">${timeAgo(s.ts)}</div>
-      </div>
-      <div class="sc-row"><span class="sc-lbl">Has</span><span>Seat <b>${esc(s.cur_seat)}</b> (${esc(s.cur_berth)})</span></div>
-      <div class="sc-row"><span class="sc-lbl">Wants</span><span>Seat <b>${esc(s.want_seat)}</b> (${esc(s.want_berth)})</span></div>
-      <button class="btn btn-danger btn-sm" style="margin-top:8px" onclick="adminDelSwap('${sid}')">🗑 Delete</button>
+      <div class="sc-name">${esc(s.name)} <span style="font-size:11px;color:var(--muted)">ID:${s.user_id}</span></div>
+      <div class="sc-meta">🚆 ${esc(s.train)} · 🚉 ${esc(s.coach)} · ${timeAgo(s.ts)}</div>
+      <div class="sc-seats">💺 Seat <b>${esc(s.cur_seat)}</b> (${esc(s.cur_berth)}) → 🔄 <b>${esc(s.want_berth)}</b></div>
+      <button class="btn btn-danger btn-sm" style="margin-top:8px" onclick="admDelSwap('${sid}')">🗑 Delete</button>
     </div>`).join('');
 }
-async function adminDelSwap(sid) { if(!confirm('Delete this swap?'))return; await fbDel(`swaps/${sid}`); showToast('✅ Deleted'); loadAdminSwaps(); }
+async function admDelSwap(sid){if(!confirm('Delete?'))return;await fbDel(`swaps/${sid}`);toast('Deleted');loadAdmSwaps();}
 
-// ════════════════════════════════════════════
-//  ADMIN — FEEDBACKS
-// ════════════════════════════════════════════
-async function loadFeedbacks() {
-  if (!isAdmin) return;
-  const el = document.getElementById('fbs-list');
-  const fbs = await fbGet('feedbacks') || {};
-  const list = Object.entries(fbs).sort((a,b)=>b[0]>a[0]?1:-1).slice(0,20);
-  if (!list.length) { el.innerHTML = '<div class="empty"><div class="empty-icon">💬</div><p>No feedbacks yet</p></div>'; return; }
-  el.innerHTML = list.map(([fid,f]) => `
+async function loadAdmFeedbacks() {
+  const fbs=await fbGet('feedbacks')||{};
+  const list=Object.entries(fbs).sort((a,b)=>b[0]>a[0]?1:-1).slice(0,20);
+  if(!list.length){document.getElementById('adm-content').innerHTML='<div class="empty"><div class="empty-icon">💬</div><p>No feedbacks</p></div>';return;}
+  document.getElementById('adm-content').innerHTML=list.map(([fid,f])=>`
     <div class="card">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start">
-        <div>
-          <div style="font-weight:600;font-size:13px">${esc(f.name||'?')}</div>
-          <div style="font-size:11px;color:var(--muted)">@${esc(f.username||'—')} · ${esc(f.ts||'')}</div>
-        </div>
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
+        <div><div style="font-weight:700;font-size:13px">${esc(f.name||'?')}</div><div style="font-size:11px;color:var(--muted)">@${esc(f.username||'—')} · ${esc(f.ts||'')}</div></div>
         <button class="btn btn-danger btn-sm" onclick="delFeedback('${fid}')">🗑</button>
       </div>
-      <div style="font-size:13px;background:var(--surface);padding:9px;border-radius:8px;margin-top:8px;line-height:1.5">${esc(f.message||'')}</div>
+      <div style="font-size:13px;background:var(--card2);padding:10px;border-radius:10px;line-height:1.5">${esc(f.message||'')}</div>
     </div>`).join('');
 }
-async function delFeedback(fid) { await fbDel(`feedbacks/${fid}`); showToast('Deleted'); loadFeedbacks(); }
+async function delFeedback(fid){await fbDel(`feedbacks/${fid}`);toast('Deleted');loadAdmFeedbacks();}
 
-// ════════════════════════════════════════════
-//  BROADCAST
-// ════════════════════════════════════════════
-// ════════════════════════════════════════════
-//  MANUAL ADMIN OVERRIDE (for testing)
-// ════════════════════════════════════════════
-async function checkAndSetAdmin() {
-  // Re-check admin status from Firebase
-  try {
-    const adminData = await fbGet('admin_ids');
-    if (adminData) {
-      const ids = Array.isArray(adminData) ? adminData : Object.values(adminData);
-      if (ids.map(Number).includes(ME)) {
-        isAdmin = true;
-        document.getElementById('role-badge').textContent = '🛠 Admin';
-        document.getElementById('role-badge').classList.add('admin');
-        injectAdminTabs();
-        showToast('✅ Admin access granted!');
-        return true;
-      }
-    }
-  } catch(e) {}
-  showToast(`Your ID: ${ME} — not in admin list`);
-  return false;
+async function loadAdmTools() {
+  document.getElementById('adm-content').innerHTML=`
+    <div class="card">
+      <div class="card-hdr">📢 Broadcast to All Users</div>
+      <textarea class="inp" id="bc-msg" rows="4" placeholder="Type your announcement..."></textarea>
+      <button class="btn btn-warn btn-full" style="margin-top:10px" onclick="doBroadcast()">📢 Queue Broadcast</button>
+      <p style="font-size:11px;color:var(--muted);margin-top:8px">Message saved to Firebase. Bot will pick it up next cycle or use /broadcast command in bot.</p>
+    </div>
+    <div class="card">
+      <div class="card-hdr">🏅 Quick Badge by User ID</div>
+      <div class="inp-grp"><label class="inp-lbl">Telegram User ID</label><input class="inp" id="q-uid" type="number" placeholder="e.g. 1234567890"></div>
+      <div class="badge-grid" id="q-badge-grid">${Object.keys(SPEC_BADGES).map(b=>`<div class="badge-chip" onclick="selBadge(this,'${esc(b)}')">${esc(b)}</div>`).join('')}</div>
+      <button class="btn btn-success btn-full" style="margin-top:10px" onclick="quickGiveBadge()">✅ Give Badge</button>
+    </div>
+    <div class="card">
+      <div class="card-hdr">🌟 Set Family Member</div>
+      <div class="inp-grp"><label class="inp-lbl">Telegram User ID</label><input class="inp" id="fam-uid" type="number" placeholder="User ID"></div>
+      <button class="btn btn-warn btn-full" onclick="quickSetFamily()">🌟 Set as Official Family</button>
+    </div>
+    <div class="card">
+      <div class="card-hdr">🚫 Quick Ban / Unban</div>
+      <div class="inp-grp"><label class="inp-lbl">Telegram User ID</label><input class="inp" id="ban-uid" type="number" placeholder="User ID"></div>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-danger btn-full" onclick="quickBan(true)">🚫 Ban</button>
+        <button class="btn btn-success btn-full" onclick="quickBan(false)">✅ Unban</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-hdr">🔌 Firebase Status</div>
+      <div id="fb-status"><div class="loader"><div class="spin"></div></div></div>
+    </div>`;
+  // Load Firebase status
+  fbGet('bot_status').then(bs=>{
+    document.getElementById('fb-status').innerHTML = bs
+      ? `<span style="color:var(--green)">🟢 Online</span> · Boot: ${esc(bs.boot||'—')}`
+      : `<span style="color:var(--red)">🔴 Offline</span>`;
+  });
 }
 
-async function broadcast() {
-  const msg = document.getElementById('bc-msg')?.value?.trim();
-  if (!msg) { showToast('⚠️ Write a message first'); return; }
-  await fbSet(`broadcasts/${Date.now()}`, { message:msg, sent_by:ME, ts:new Date().toLocaleString(), status:'pending' });
-  document.getElementById('bc-msg').value = '';
-  showToast('✅ Broadcast saved! Bot will send it.');
+async function doBroadcast() {
+  const msg=document.getElementById('bc-msg')?.value?.trim();
+  if(!msg){toast('Write a message');return;}
+  await fbSet(`broadcasts/${Date.now()}`,{message:msg,sent_by:ME,ts:new Date().toLocaleString(),status:'pending'});
+  document.getElementById('bc-msg').value='';
+  toast('✅ Broadcast queued! Use /broadcast in bot to send.');
+}
+async function quickGiveBadge() {
+  const uid=document.getElementById('q-uid')?.value?.trim();
+  if(!uid){toast('Enter user ID');return;}
+  if(!selectedBadge){toast('Select a badge');return;}
+  await fbPatch(`users/${uid}`,{special_badge:selectedBadge,badge:selectedBadge});
+  toast(`✅ ${selectedBadge} given to ${uid}`);
+}
+async function quickSetFamily() {
+  const uid=document.getElementById('fam-uid')?.value?.trim();
+  if(!uid){toast('Enter user ID');return;}
+  await fbPatch(`users/${uid}`,{special_user:true,badge:'🌟 Official SeatSwap Family'});
+  toast(`🌟 Set as Family: ${uid}`);
+}
+async function quickBan(ban) {
+  const uid=document.getElementById('ban-uid')?.value?.trim();
+  if(!uid){toast('Enter user ID');return;}
+  await fbPatch(`users/${uid}`,{banned:ban,reports:ban?3:0});
+  toast(ban?`🚫 Banned ${uid}`:`✅ Unbanned ${uid}`);
 }
 
-// ════════════════════════════════════════════
+// ══════════════════════════════════════
 //  INIT
-// ════════════════════════════════════════════
-loadHomeStats();
+// ══════════════════════════════════════
+loadHome();
 </script>
 </body>
 </html>
