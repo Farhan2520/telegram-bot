@@ -162,15 +162,15 @@ body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSy
 //  CONFIG — Fill these in!
 // ════════════════════════════════════
 const FIREBASE_CONFIG = {
-  apiKey:            "AIzaSyDqv5959GMD2CDxsqj4dkVJOk2kKz3mRx0",
+  apiKey:            "YOUR_FIREBASE_API_KEY",
   authDomain:        "seatswap-a96ec.firebaseapp.com",
   databaseURL:       "https://seatswap-a96ec-default-rtdb.firebaseio.com",
   projectId:         "seatswap-a96ec",
   storageBucket:     "seatswap-a96ec.appspot.com",
-  messagingSenderId: "509730407173",
-  appId:             "1:509730407173:web:8b39caadbbcd80efc02d6c",
+  messagingSenderId: "YOUR_SENDER_ID",
+  appId:             "YOUR_APP_ID",
 };
-const ADMIN_IDS = [0]; 5981332827 // Put your Telegram ID here, e.g. [1234567890]
+const ADMIN_IDS = [0]; // Put your Telegram ID here, e.g. [1234567890]
 
 // ════════════════════════════════════
 //  TRAIN & SEAT DATA
@@ -704,6 +704,7 @@ function handler(e) {
   else if (a==="cancel_swap") cancelSwap();
   else if (a==="refresh_stats") loadStats();
   else if (a==="report_user") reportUser(el.dataset.uid);
+  else if (a==="contact_user") contactUser(el.dataset.uid, el.dataset.sid, el.dataset.sname);
   else if (a==="show_feedback_form") { document.getElementById("feedback-form").style.display="block"; }
   else if (a==="submit_feedback") submitFeedback();
   else if (a==="quick_badge") { selectedAdminBadge=el.dataset.b; document.querySelectorAll("[data-action=quick_badge]").forEach(b=>b.classList.remove("selected")); el.classList.add("selected"); }
@@ -722,7 +723,11 @@ async function doSearch() {
   if (!train) { toast("Enter a train number"); return; }
   App.searchTrain = train; App.coachView = null;
   const all = await FB.get("swaps") || {};
-  const results = Object.values(all).filter(s=>s.train===train&&s.status==="active");
+  const myId = App.tgUser?.id;
+  // Filter: active, not own request
+  const results = Object.values(all).filter(s =>
+    s.train===train && s.status==="active" && s.user_id !== myId
+  );
   for (const r of results) { r._user = await FB.get(`users/${r.user_id}`) || {}; }
   App.searchResults = results;
   render();
@@ -797,6 +802,39 @@ async function cancelSwap() {
   App.mySwap = null;
   toast("✅ Request cancelled");
   render();
+}
+
+async function contactUser(ownerUid, swapId, ownerName) {
+  const myUid  = App.tgUser.id;
+  const myName = App.tgUser.first_name;
+  const ownerU = parseInt(ownerUid);
+  if (myUid === ownerU) { toast("This is your own request!"); return; }
+
+  // Write contact request to Firebase — bot job will pick this up
+  const key = `${swapId}_${myUid}`;
+  const existing = await FB.get(`contact_requests/${key}`);
+  if (!existing) {
+    await FB.set(`contact_requests/${key}`, {
+      swap_id:          swapId,
+      swap_owner_id:    ownerU,
+      swap_owner_name:  ownerName,
+      contactor_id:     myUid,
+      contactor_name:   myName,
+      contactor_uname:  App.tgUser.username || "",
+      notified:         false,
+      ts: new Date().toLocaleString(),
+    });
+    toast("📩 Opening chat... After swap, bot will send Confirm button to both of you!");
+  } else {
+    toast("📩 Opening chat...");
+  }
+
+  // Open Telegram DM
+  setTimeout(() => {
+    window.Telegram?.WebApp?.openTelegramLink
+      ? window.Telegram.WebApp.openTelegramLink(`tg://user?id=${ownerU}`)
+      : window.open(`tg://user?id=${ownerU}`, "_blank");
+  }, 800);
 }
 
 async function reportUser(uid) {
