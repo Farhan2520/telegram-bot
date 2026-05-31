@@ -2,7 +2,7 @@ import os, json, uuid, re
 from datetime import datetime, timedelta
 from telegram import (
     Update, InlineKeyboardButton, InlineKeyboardMarkup,
-    ReplyKeyboardMarkup, BotCommand, MenuButtonCommands,
+    ReplyKeyboardMarkup, BotCommand, MenuButtonCommands, WebAppInfo,
 )
 from telegram.ext import (
     ApplicationBuilder, CommandHandler, ContextTypes,
@@ -17,6 +17,7 @@ from firebase_admin import credentials, db
 BOT_TOKEN     = os.getenv("BOT_TOKEN", "YOUR_BOT_TOKEN")
 ADMIN_IDS     = [int(x) for x in os.getenv("ADMIN_IDS","0").split(",") if x.strip().isdigit()]
 ADMIN_UNAMES  = [x.strip().lower().lstrip("@") for x in os.getenv("ADMIN_USERNAMES","").split(",") if x.strip()]
+MINI_APP_URL  = os.getenv("MINI_APP_URL", "")   # e.g. https://yourname.github.io/seatswap-miniapp
 
 # ═══════════════════════════════════════════════════════
 #  FIREBASE
@@ -654,6 +655,16 @@ async def start(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
         s("welcome", lang, name=user.first_name) + f"\n\n_{db_ico} DB {'Online' if FIREBASE_ON else 'Offline'}_",
         reply_markup=kb_menu(lang), parse_mode="Markdown"
     )
+    # Show mini app button if URL is configured
+    if MINI_APP_URL:
+        btns = [[InlineKeyboardButton("📱 Open SeatSwap App", web_app=WebAppInfo(url=MINI_APP_URL))]]
+        if is_admin(user.id):
+            btns.append([InlineKeyboardButton("⚙️ Admin Panel", web_app=WebAppInfo(url=MINI_APP_URL + "?admin=1"))])
+        await update.effective_message.reply_text(
+            "👆 Tap to open the app:",
+            reply_markup=InlineKeyboardMarkup(btns),
+            parse_mode="Markdown"
+        )
 
 # ═══════════════════════════════════════════════════════
 #  CHANGE SEAT (POST SWAP) FLOW
@@ -1176,6 +1187,25 @@ async def cancel_req(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
 # ═══════════════════════════════════════════════════════
 #  /MYID
 # ═══════════════════════════════════════════════════════
+async def open_admin(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
+    """Quick admin panel access via /admin command"""
+    if not is_admin(update.effective_user.id):
+        await update.message.reply_text("❌ Not authorized."); return
+    if not MINI_APP_URL:
+        await update.message.reply_text(
+            "⚠️ Mini App URL not configured.\n\n"
+            "Set MINI_APP_URL in Railway Variables:\n"
+            "`MINI_APP_URL = https://yourname.github.io/seatswap-miniapp`",
+            parse_mode="Markdown"
+        ); return
+    await update.message.reply_text(
+        "⚙️ *Admin Panel*",
+        reply_markup=InlineKeyboardMarkup([[
+            InlineKeyboardButton("🔐 Open Admin Panel", web_app=WebAppInfo(url=MINI_APP_URL))
+        ]]),
+        parse_mode="Markdown"
+    )
+
 async def my_id(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     u = update.effective_user
     await update.message.reply_text(
@@ -1524,6 +1554,7 @@ async def post_init(app):
         BotCommand("myid",        "🔑 Get my Telegram ID"),
         BotCommand("cancel",      "❌ Cancel current action"),
         BotCommand("help",        "❓ How to use SeatSwap"),
+        BotCommand("admin",       "⚙️ Admin Panel (admin only)"),
     ]
     await app.bot.set_my_commands(cmds)
     try: await app.bot.set_chat_menu_button(menu_button=MenuButtonCommands())
