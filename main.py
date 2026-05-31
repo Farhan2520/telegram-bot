@@ -42,6 +42,17 @@ try:
 except Exception as e:
     print(f"❌ Firebase error: {e}")
 
+# Save admin IDs to Firebase so Mini App can verify admins
+def sync_admin_ids():
+    if not FIREBASE_ON or not ADMIN_IDS: return
+    try:
+        db.reference("admin_ids").set(ADMIN_IDS)
+        print(f"✅ Admin IDs synced to Firebase: {ADMIN_IDS}")
+    except Exception as e:
+        print(f"⚠️ Could not sync admin IDs: {e}")
+
+sync_admin_ids()
+
 # ═══════════════════════════════════════════════════════
 #  TRAIN DATABASE
 # ═══════════════════════════════════════════════════════
