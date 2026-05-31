@@ -1,981 +1,931 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
 <title>SeatSwap</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
 <style>
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;600&display=swap');
 :root {
-  --bg:    var(--tg-theme-bg-color,#17212b);
-  --bg2:   var(--tg-theme-secondary-bg-color,#232e3c);
-  --text:  var(--tg-theme-text-color,#f5f5f5);
-  --hint:  var(--tg-theme-hint-color,#708499);
-  --link:  var(--tg-theme-link-color,#5288c1);
-  --btn:   var(--tg-theme-button-color,#5288c1);
-  --btnT:  var(--tg-theme-button-text-color,#ffffff);
-  --danger:#e74c3c; --success:#27ae60; --warn:#f39c12;
-  --radius:12px; --radius-sm:8px;
-  --nav-h:60px;
+  --bg:#0d0f14; --surface:#161920; --card:#1e2230; --border:#2a2f42;
+  --accent:#4f8ef7; --accent2:#7c3aed; --green:#22c55e; --red:#ef4444;
+  --yellow:#f59e0b; --text:#f0f2ff; --muted:#7b82a0; --r:14px;
 }
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:14px;min-height:100vh;overflow-x:hidden}
-#app{padding-bottom:calc(var(--nav-h)+8px)}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;padding-bottom:72px}
 
-/* ── Loader ── */
-#loader{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:999;flex-direction:column;gap:12px}
-.spin{width:40px;height:40px;border:3px solid var(--bg2);border-top-color:var(--btn);border-radius:50%;animation:spin .7s linear infinite}
-@keyframes spin{to{transform:rotate(360deg)}}
+/* TOPBAR */
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:14px 16px 10px;background:var(--surface);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100}
+.logo{font-family:'Syne',sans-serif;font-weight:800;font-size:19px;background:linear-gradient(90deg,var(--accent),#a78bfa);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.role-badge{font-size:11px;font-weight:600;background:var(--card);border:1px solid var(--border);padding:3px 10px;border-radius:20px;color:var(--muted)}
+.role-badge.admin{color:var(--yellow);border-color:var(--yellow)}
 
-/* ── Bottom Nav ── */
-#nav{position:fixed;bottom:0;left:0;right:0;height:var(--nav-h);background:var(--bg2);display:flex;border-top:1px solid rgba(255,255,255,.06);z-index:100}
-.nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;cursor:pointer;font-size:10px;color:var(--hint);transition:.2s;border:none;background:none;padding:0}
-.nav-btn.active{color:var(--btn)}
-.nav-btn svg{width:22px;height:22px}
+/* TABS */
+.tabs{display:flex;background:var(--surface);border-bottom:1px solid var(--border);overflow-x:auto;scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.tab{flex:1;min-width:max-content;padding:11px 14px;font-size:12px;font-weight:600;color:var(--muted);cursor:pointer;border:none;background:none;border-bottom:2px solid transparent;transition:.2s;white-space:nowrap}
+.tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+.tab.atab.active{color:var(--yellow);border-bottom-color:var(--yellow)}
 
-/* ── Cards / Sections ── */
-.section{padding:12px}
-.card{background:var(--bg2);border-radius:var(--radius);padding:14px;margin-bottom:10px}
-.card-title{font-size:13px;font-weight:600;color:var(--hint);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px}
-.divider{height:1px;background:rgba(255,255,255,.06);margin:8px 0}
+/* PAGES */
+.page{display:none;padding:14px;animation:fadeIn .2s ease}
+.page.active{display:block}
+@keyframes fadeIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
 
-/* ── Header ── */
-.header{padding:16px 16px 8px;display:flex;align-items:center;gap:10px}
-.header-icon{width:40px;height:40px;background:var(--btn);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
-.header h2{font-size:18px;font-weight:700}
-.header p{font-size:12px;color:var(--hint)}
+/* CARD */
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:14px;margin-bottom:10px}
+.card-title{font-family:'Syne',sans-serif;font-size:14px;font-weight:700;margin-bottom:4px}
+.card-sub{font-size:12px;color:var(--muted);margin-bottom:12px}
 
-/* ── Buttons ── */
-.btn{width:100%;padding:13px;border-radius:var(--radius-sm);border:none;font-size:14px;font-weight:600;cursor:pointer;transition:.15s;display:flex;align-items:center;justify-content:center;gap:6px}
-.btn-primary{background:var(--btn);color:var(--btnT)}
-.btn-primary:active{opacity:.85}
-.btn-secondary{background:rgba(255,255,255,.08);color:var(--text)}
-.btn-danger{background:var(--danger);color:#fff}
-.btn-success{background:var(--success);color:#fff}
-.btn-sm{padding:8px 14px;width:auto;font-size:12px;border-radius:6px}
+/* STAT GRID */
+.sgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+.sbox{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:13px;text-align:center}
+.snum{font-family:'Syne',sans-serif;font-size:24px;font-weight:800;background:linear-gradient(135deg,var(--accent),#a78bfa);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.slbl{font-size:11px;color:var(--muted);margin-top:2px}
 
-/* ── Form ── */
-.form-group{margin-bottom:12px}
-.form-label{font-size:12px;color:var(--hint);margin-bottom:5px;display:block}
-.form-input{width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:var(--radius-sm);padding:11px 13px;color:var(--text);font-size:14px;outline:none;transition:.2s}
-.form-input:focus{border-color:var(--btn)}
-.form-input::placeholder{color:var(--hint)}
+/* SWAP CARD */
+.sc{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:13px;margin-bottom:10px;position:relative;overflow:hidden}
+.sc::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:linear-gradient(180deg,var(--accent),var(--accent2));border-radius:3px 0 0 3px}
+.sc-hdr{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px}
+.sc-name{font-weight:600;font-size:14px}
+.sc-badge{font-size:11px;color:var(--muted)}
+.sc-row{display:flex;align-items:center;gap:6px;margin-bottom:5px;font-size:13px}
+.sc-lbl{font-size:11px;color:var(--muted);width:38px;flex-shrink:0}
+.sc-time{font-size:11px;color:var(--muted)}
+.sc-acts{display:flex;gap:7px;margin-top:10px;flex-wrap:wrap}
 
-/* ── Stats Grid ── */
-.stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
-.stat-card{background:var(--bg2);border-radius:var(--radius);padding:14px;text-align:center}
-.stat-num{font-size:24px;font-weight:700;color:var(--btn)}
-.stat-label{font-size:11px;color:var(--hint);margin-top:3px}
+/* MATCH CARD - special highlight */
+.sc.match-card{border-color:var(--green);background:rgba(34,197,94,.07)}
+.sc.match-card::before{background:linear-gradient(180deg,var(--green),#16a34a)}
 
-/* ── Swap Card ── */
-.swap-card{background:var(--bg2);border-radius:var(--radius);padding:12px;margin-bottom:8px;border-left:3px solid var(--btn)}
-.swap-card .name{font-weight:600;font-size:14px}
-.swap-card .badge{font-size:11px;color:var(--hint);margin-left:4px}
-.swap-card .info{font-size:12px;color:var(--hint);margin:4px 0}
-.swap-card .seats{font-size:13px;margin:6px 0}
-.swap-card .actions{display:flex;gap:6px;margin-top:8px}
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:5px;padding:9px 16px;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;border:none;transition:.15s;user-select:none;text-decoration:none}
+.btn:active{transform:scale(.97)}
+.btn-primary{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff}
+.btn-secondary{background:var(--surface);border:1px solid var(--border);color:var(--text)}
+.btn-danger{background:rgba(239,68,68,.15);color:var(--red);border:1px solid rgba(239,68,68,.3)}
+.btn-success{background:rgba(34,197,94,.15);color:var(--green);border:1px solid rgba(34,197,94,.3)}
+.btn-warn{background:rgba(245,158,11,.15);color:var(--yellow);border:1px solid rgba(245,158,11,.3)}
+.btn-full{width:100%}
+.btn-sm{padding:6px 12px;font-size:12px;border-radius:8px}
 
-/* ── User Row ── */
-.user-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.05)}
-.user-row:last-child{border-bottom:none}
-.user-avatar{width:36px;height:36px;background:var(--btn);border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;flex-shrink:0}
-.user-info{flex:1;min-width:0}
-.user-name{font-weight:600;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.user-sub{font-size:11px;color:var(--hint)}
-.user-actions{display:flex;gap:4px;flex-shrink:0}
+/* INPUTS */
+.ig{margin-bottom:12px}
+.il{font-size:12px;color:var(--muted);margin-bottom:5px;display:block}
+.inp{width:100%;padding:10px 13px;background:var(--surface);border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:14px;font-family:'DM Sans',sans-serif;outline:none;transition:.2s}
+.inp:focus{border-color:var(--accent)}
+.inp::placeholder{color:var(--muted)}
+select.inp{appearance:none;cursor:pointer}
 
-/* ── Badge Chips ── */
-.chip{display:inline-block;padding:3px 8px;border-radius:20px;font-size:11px;font-weight:600;background:rgba(82,136,193,.2);color:var(--btn)}
-.chip.banned{background:rgba(231,76,60,.2);color:var(--danger)}
-.chip.admin{background:rgba(39,174,96,.2);color:var(--success)}
+/* PROGRESS */
+.prog-track{height:6px;background:var(--surface);border-radius:6px;overflow:hidden;margin-top:5px}
+.prog-fill{height:100%;background:linear-gradient(90deg,var(--accent),#a78bfa);border-radius:6px;transition:width .5s}
 
-/* ── Coach Buttons ── */
-.coach-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:8px}
-.coach-btn{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:var(--radius-sm);padding:10px;text-align:center;cursor:pointer;transition:.15s;font-size:13px;font-weight:600;color:var(--text)}
-.coach-btn:active,.coach-btn.selected{background:var(--btn);color:var(--btnT);border-color:var(--btn)}
+/* PROFILE HERO */
+.ph{background:linear-gradient(135deg,rgba(79,142,247,.12),rgba(124,58,237,.12));border:1px solid rgba(79,142,247,.2);border-radius:var(--r);padding:20px;text-align:center;margin-bottom:12px}
+.pa{width:60px;height:60px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;font-size:24px;margin:0 auto 10px}
+.pname{font-family:'Syne',sans-serif;font-size:19px;font-weight:700}
+.pbadge{color:var(--muted);font-size:13px;margin-top:3px}
 
-/* ── Berth Buttons ── */
-.berth-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px}
-.berth-btn{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:var(--radius-sm);padding:12px;text-align:center;cursor:pointer;transition:.15s;font-size:13px;font-weight:600}
-.berth-btn:active,.berth-btn.selected{background:var(--btn);color:var(--btnT);border-color:var(--btn)}
+/* USER ROW */
+.ur{display:flex;align-items:center;justify-content:space-between;padding:11px 0;border-bottom:1px solid var(--border)}
+.ur:last-child{border-bottom:none}
+.ur-name{font-size:13px;font-weight:600}
+.ur-meta{font-size:11px;color:var(--muted);margin-top:2px}
+.ur-acts{display:flex;gap:5px;flex-shrink:0}
 
-/* ── Steps ── */
-.steps{display:flex;justify-content:center;gap:6px;margin-bottom:16px}
-.step-dot{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.15);transition:.3s}
-.step-dot.active{background:var(--btn);width:20px;border-radius:4px}
-.step-dot.done{background:var(--success)}
+/* MODAL */
+.mo{position:fixed;inset:0;background:rgba(0,0,0,.75);display:flex;align-items:flex-end;justify-content:center;z-index:200;opacity:0;pointer-events:none;transition:.25s}
+.mo.open{opacity:1;pointer-events:all}
+.mb{background:var(--surface);border:1px solid var(--border);border-radius:var(--r) var(--r) 0 0;width:100%;max-width:480px;padding:20px;transform:translateY(40px);transition:.3s;max-height:80vh;overflow-y:auto}
+.mo.open .mb{transform:translateY(0)}
+.mt{font-family:'Syne',sans-serif;font-size:16px;font-weight:700;margin-bottom:14px}
 
-/* ── Toast ── */
-#toast{position:fixed;bottom:calc(var(--nav-h)+12px);left:50%;transform:translateX(-50%) translateY(20px);background:#1e2d40;color:var(--text);padding:10px 18px;border-radius:20px;font-size:13px;z-index:200;opacity:0;transition:.3s;white-space:nowrap;max-width:90vw;text-align:center;border:1px solid rgba(255,255,255,.1)}
+/* TOAST */
+#toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--card);border:1px solid var(--border);border-radius:10px;padding:9px 16px;font-size:13px;font-weight:500;opacity:0;transition:.3s;pointer-events:none;z-index:999;white-space:nowrap;max-width:90vw;text-align:center}
 #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 
-/* ── Profile Badge ── */
-.profile-badge{text-align:center;padding:20px 0 10px}
-.profile-avatar{width:70px;height:70px;background:var(--btn);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:700;margin:0 auto 10px}
-.profile-name{font-size:18px;font-weight:700}
-.profile-badge-text{font-size:13px;color:var(--hint);margin-top:4px}
-.profile-stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:14px}
-.ps-item{text-align:center}
-.ps-num{font-size:20px;font-weight:700;color:var(--btn)}
-.ps-label{font-size:10px;color:var(--hint)}
+/* LOADER */
+.loader{display:flex;align-items:center;justify-content:center;padding:36px;gap:8px;color:var(--muted)}
+.spin{width:18px;height:18px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
 
-/* ── Progress ── */
-.progress-bar{height:6px;background:rgba(255,255,255,.1);border-radius:3px;margin-top:6px;overflow:hidden}
-.progress-fill{height:100%;background:var(--btn);border-radius:3px;transition:.5s}
+/* EMPTY */
+.empty{text-align:center;padding:36px 16px;color:var(--muted)}
+.empty-icon{font-size:34px;margin-bottom:8px}
 
-/* ── Admin Tabs ── */
-.tabs{display:flex;background:var(--bg2);border-radius:var(--radius);padding:3px;margin-bottom:12px;gap:2px}
-.tab{flex:1;padding:8px;text-align:center;border-radius:var(--radius-sm);cursor:pointer;font-size:12px;font-weight:600;color:var(--hint);transition:.2s}
-.tab.active{background:var(--btn);color:var(--btnT)}
+/* CONFIRM BANNER */
+.confirm-banner{background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.3);border-radius:var(--r);padding:13px;margin-bottom:12px}
+.confirm-banner .cb-title{font-weight:700;color:var(--green);margin-bottom:6px;font-size:14px}
 
-/* ── Empty State ── */
-.empty{text-align:center;padding:30px 20px;color:var(--hint)}
-.empty-icon{font-size:40px;margin-bottom:10px}
-.empty p{font-size:14px}
+/* DIVIDER */
+hr{border:none;border-top:1px solid var(--border);margin:12px 0}
 
-/* ── Feedback Card ── */
-.feedback-card{background:var(--bg2);border-radius:var(--radius);padding:12px;margin-bottom:8px}
-.feedback-user{font-weight:600;font-size:13px}
-.feedback-msg{color:var(--hint);font-size:13px;margin-top:5px;line-height:1.5}
-.feedback-time{font-size:11px;color:var(--hint);margin-top:4px}
-
-/* ── Train Result ── */
-.train-result{background:var(--bg2);border-radius:var(--radius);padding:14px;margin-bottom:8px}
-.train-result h3{font-size:15px;font-weight:700}
-.train-result p{color:var(--hint);font-size:12px;margin-top:2px}
-
-/* ── Animations ── */
-@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
-.fade-in{animation:fadeIn .25s ease}
+/* INFO ROWS */
+.ir{display:flex;justify-content:space-between;padding:6px 0;font-size:13px;border-bottom:1px solid var(--border)}
+.ir:last-child{border-bottom:none}
+.ir-lbl{color:var(--muted)}
 </style>
 </head>
 <body>
-<div id="loader"><div class="spin"></div><p style="color:var(--hint);font-size:13px">Loading SeatSwap...</p></div>
-<div id="app" style="display:none"></div>
-<nav id="nav"></nav>
+
+<div class="topbar">
+  <div class="logo">🚆 SeatSwap</div>
+  <div class="role-badge" id="role-badge">Loading...</div>
+</div>
+
+<div class="tabs" id="tabs-bar">
+  <button class="tab active" onclick="showPage('home')">🏠 Home</button>
+  <button class="tab" onclick="showPage('find')">🔍 Find</button>
+  <button class="tab" onclick="showPage('my-swap')">📋 My Swap</button>
+  <button class="tab" onclick="showPage('profile')">👤 Profile</button>
+</div>
+
 <div id="toast"></div>
 
+<!-- ══ HOME ══ -->
+<div class="page active" id="page-home">
+  <div class="card" style="background:linear-gradient(135deg,rgba(79,142,247,.1),rgba(124,58,237,.1));border-color:rgba(79,142,247,.25)">
+    <div class="card-title">Welcome to SeatSwap 🚆</div>
+    <div class="card-sub">Exchange train berths instantly with fellow passengers</div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-primary" onclick="showPage('find')" style="flex:1">🔍 Find Seat</button>
+      <button class="btn btn-secondary" onclick="showPage('my-swap')" style="flex:1">📋 My Request</button>
+    </div>
+  </div>
+  <div class="sgrid" id="home-stats">
+    <div class="sbox"><div class="snum" id="hs-active">—</div><div class="slbl">Active Swaps</div></div>
+    <div class="sbox"><div class="snum" id="hs-users">—</div><div class="slbl">Total Users</div></div>
+    <div class="sbox"><div class="snum" id="hs-done">—</div><div class="slbl">Swaps Done</div></div>
+    <div class="sbox"><div class="snum" id="hs-trains">—</div><div class="slbl">Active Trains</div></div>
+  </div>
+  <div id="pending-confirms"></div>
+  <div class="card">
+    <div class="card-title">🏅 Badge Levels</div>
+    <div style="font-size:13px;display:flex;flex-direction:column;gap:6px;margin-top:4px">
+      <div style="display:flex;justify-content:space-between"><span>🌱 Newcomer</span><span style="color:var(--muted)">0 swaps</span></div>
+      <div style="display:flex;justify-content:space-between"><span>🎫 Regular Traveler</span><span style="color:var(--muted)">3 swaps</span></div>
+      <div style="display:flex;justify-content:space-between"><span>⭐ Trusted Member</span><span style="color:var(--muted)">10 swaps</span></div>
+      <div style="display:flex;justify-content:space-between"><span>🔰 Expert Swapper</span><span style="color:var(--muted)">25 swaps</span></div>
+      <div style="display:flex;justify-content:space-between"><span>👑 Seat Master</span><span style="color:var(--muted)">50 swaps</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ FIND ══ -->
+<div class="page" id="page-find">
+  <div class="ig">
+    <label class="il">Train Number</label>
+    <input class="inp" id="find-train" placeholder="e.g. 12301" type="number" oninput="onTrainInput()"/>
+  </div>
+  <div class="ig">
+    <select class="inp" id="find-ct" onchange="doSearch()">
+      <option value="">All Coach Types</option>
+      <option value="SL">🛏 Sleeper</option>
+      <option value="3A">❄️ AC 3 Tier</option>
+      <option value="2A">❄️ AC 2 Tier</option>
+      <option value="1A">❄️ First Class</option>
+      <option value="CC">💺 Chair Car</option>
+      <option value="EC">💺 Exec Chair</option>
+      <option value="GN">🚃 General</option>
+    </select>
+  </div>
+  <div id="find-results"><div class="empty"><div class="empty-icon">🔍</div><p>Enter train number above</p></div></div>
+</div>
+
+<!-- ══ MY SWAP ══ -->
+<div class="page" id="page-my-swap">
+  <div id="my-swap-content"><div class="loader"><div class="spin"></div> Loading...</div></div>
+</div>
+
+<!-- ══ PROFILE ══ -->
+<div class="page" id="page-profile">
+  <div id="profile-content"><div class="loader"><div class="spin"></div> Loading...</div></div>
+</div>
+
+<!-- ══ ADMIN STATS ══ -->
+<div class="page" id="page-admin-stats">
+  <div class="sgrid">
+    <div class="sbox"><div class="snum" id="a-users">—</div><div class="slbl">Users</div></div>
+    <div class="sbox"><div class="snum" id="a-active">—</div><div class="slbl">Active Swaps</div></div>
+    <div class="sbox"><div class="snum" id="a-done">—</div><div class="slbl">Completed</div></div>
+    <div class="sbox"><div class="snum" id="a-banned">—</div><div class="slbl">Banned</div></div>
+    <div class="sbox"><div class="snum" id="a-reports">—</div><div class="slbl">Reports</div></div>
+    <div class="sbox"><div class="snum" id="a-fbs">—</div><div class="slbl">Feedbacks</div></div>
+  </div>
+  <div class="card">
+    <div class="card-title">📢 Broadcast</div>
+    <textarea class="inp" id="bc-msg" rows="3" placeholder="Type announcement..." style="resize:none"></textarea>
+    <button class="btn btn-warn btn-full" style="margin-top:8px" onclick="broadcast()">📢 Send to All Users</button>
+  </div>
+  <div class="card" id="db-status-card">
+    <div class="card-title">🔌 Firebase Status</div>
+    <div id="db-status" style="font-size:13px;color:var(--muted)">Checking...</div>
+  </div>
+</div>
+
+<!-- ══ ADMIN USERS ══ -->
+<div class="page" id="page-admin-users">
+  <input class="inp" id="user-search" placeholder="🔍 Search name or username" oninput="filterUsers()" style="margin-bottom:12px"/>
+  <div id="users-list"><div class="loader"><div class="spin"></div></div></div>
+</div>
+
+<!-- ══ ADMIN SWAPS ══ -->
+<div class="page" id="page-admin-swaps">
+  <div id="admin-swaps-list"><div class="loader"><div class="spin"></div></div></div>
+</div>
+
+<!-- ══ ADMIN FEEDBACKS ══ -->
+<div class="page" id="page-admin-fbs">
+  <div id="fbs-list"><div class="loader"><div class="spin"></div></div></div>
+</div>
+
+<!-- ══ USER MODAL ══ -->
+<div class="mo" id="user-modal" onclick="closeModal(event)">
+  <div class="mb">
+    <div class="mt" id="modal-title">User Details</div>
+    <div id="modal-body"></div>
+  </div>
+</div>
+
+<!-- ══ CONFIRM MODAL ══ -->
+<div class="mo" id="confirm-modal" onclick="closeModal(event)">
+  <div class="mb">
+    <div class="mt">✅ Confirm Swap</div>
+    <div id="confirm-modal-body"></div>
+  </div>
+</div>
+
 <script>
-// ════════════════════════════════════
-//  CONFIG — Fill these in!
-// ════════════════════════════════════
-const FIREBASE_CONFIG = {
- apiKey: "AIzaSyDqv5959GMD2CDxsqj4dkVJOk2kKz3mRx0",
-  authDomain: "seatswap-a96ec.firebaseapp.com",
-  databaseURL: "https://seatswap-a96ec-default-rtdb.firebaseio.com",
-  projectId: "seatswap-a96ec",
-  storageBucket: "seatswap-a96ec.firebasestorage.app",
-  messagingSenderId: "509730407173",
-  appId: "1:509730407173:web:8b39caadbbcd80efc02d6c",
-};
-const ADMIN_IDS = [0]; // Put your Telegram ID here, e.g. [1234567890]
+// ════════════════════════════════════════════
+//  CONFIG — fill these
+// ════════════════════════════════════════════
+const FB_URL  = "https://seatswap-a96ec-default-rtdb.firebaseio.com";
+const ADMIN_IDS = [5981332827]; // your Telegram ID
 
-// ════════════════════════════════════
-//  TRAIN & SEAT DATA
-// ════════════════════════════════════
-const TRAINS = {
-  "12301":"Howrah Rajdhani","12302":"New Delhi Rajdhani",
-  "12303":"Poorva Express","12305":"Howrah Rajdhani (Patna)",
-  "12309":"Rajendra Nagar Rajdhani","12313":"Sealdah Rajdhani",
-  "12321":"Howrah Mumbai Mail","12343":"Darjeeling Mail",
-  "12345":"Saraighat Express","12381":"Poorabh Express",
-  "12423":"Dibrugarh Rajdhani","12431":"Trivandrum Rajdhani",
-  "12505":"Northeast Express","12557":"Sapt Kranti",
-  "12559":"Shiv Ganga Express","12601":"Mangalore Express",
-  "12615":"Grand Trunk Express","12621":"Tamil Nadu Express",
-  "12627":"Karnataka Express","12657":"Chennai Mail",
-  "12801":"Purushottam Express","12875":"Neelachal Express",
-  "12951":"Mumbai Rajdhani","12952":"New Delhi Rajdhani",
-  "13005":"Howrah Amritsar Express","13065":"HWH-AV Amrit Bharat",
-  "15671":"Kamakhya Rohtak AB","15949":"Dibrugarh Amrit Bharat",
-  "16121":"Tambaram-TVC AB","16329":"Nagercoil-MAS AB",
-  "22691":"Rajdhani Express","22435":"Varanasi Vande Bharat",
-  "22589":"Banaras Amrit Bharat","20901":"Mumbai-Ahm VB",
-  "12017":"Howrah Shatabdi","12041":"NJP Shatabdi",
-  "12259":"Sealdah Duronto","12001":"Bhopal Shatabdi",
-  "11061":"LTT Jabalpur Exp","11071":"Kamayani Express",
-};
+// ════════════════════════════════════════════
+//  TELEGRAM INIT
+// ════════════════════════════════════════════
+const tg = window.Telegram?.WebApp;
+let tgUser = null, isAdmin = false;
 
-const COACH_TYPES = {
-  "SL":{"label":"🛏 Sleeper","max":72,"coaches":Array.from({length:12},(_,i)=>`S${i+1}`)},
-  "3A":{"label":"❄️ AC 3 Tier","max":64,"coaches":Array.from({length:6},(_,i)=>`B${i+1}`)},
-  "2A":{"label":"❄️ AC 2 Tier","max":46,"coaches":Array.from({length:4},(_,i)=>`A${i+1}`)},
-  "1A":{"label":"❄️ AC 1st","max":24,"coaches":["H1","H2"]},
-  "CC":{"label":"💺 Chair Car","max":78,"coaches":Array.from({length:8},(_,i)=>`C${i+1}`)},
-  "GN":{"label":"🚃 General","max":200,"coaches":["GS1","GS2","GS3"]},
-};
-
-const BERTHS_BY_CT = {
-  "SL":["Lower","Middle","Upper","Side Lower","Side Upper"],
-  "3A":["Lower","Middle","Upper","Side Lower","Side Upper"],
-  "2A":["Lower","Upper"], "1A":["Lower","Upper"],
-  "CC":["Window","Middle","Aisle"], "GN":["Any"],
-};
-
-const BADGES = ["🌱 Newcomer","🎫 Regular (3+)","⭐ Trusted (10+)","🔰 Expert (25+)","👑 Seat Master (50+)"];
-const SPECIAL_BADGES = ["👑 Master","⭐ VIP","🛡 Trusted","💎 Premium","👨‍👩‍👧‍👦 Family","🌟 Official","✅ Verified"];
-
-function autoBerth(seat, ct) {
-  const s = parseInt(seat);
-  if (!s) return "Any";
-  if (ct==="SL"||ct==="3A") return ["Lower","Middle","Upper","Lower","Middle","Upper","Side Lower","Side Upper"][(s-1)%8];
-  if (ct==="2A") return (s-1)%4<2?"Lower":"Upper";
-  if (ct==="1A") return s%2===1?"Lower":"Upper";
-  if (ct==="CC") return ["Window","Middle","Aisle"][(s-1)%3];
-  return "Any";
+if (tg) {
+  tg.ready();
+  tg.expand();
+  tg.setHeaderColor?.('#0d0f14');
 }
-function getBadge(swaps=0, special="") {
-  if (special) return special;
-  if (swaps>=50) return "👑 Seat Master";
-  if (swaps>=25) return "🔰 Expert Swapper";
-  if (swaps>=10) return "⭐ Trusted Member";
-  if (swaps>=3)  return "🎫 Regular Traveler";
-  return "🌱 Newcomer";
+
+// Get user — handle all cases
+const _rawUser = tg?.initDataUnsafe?.user;
+if (_rawUser && _rawUser.id) {
+  tgUser = _rawUser;
+} else {
+  // Fallback: try to get from URL param (for testing) or use guest
+  const urlParams = new URLSearchParams(window.location.search);
+  const testId = urlParams.get('uid');
+  tgUser = testId
+    ? { id: parseInt(testId), first_name: "Test", username: "test" }
+    : { id: 0, first_name: "Guest", username: "guest" };
+}
+
+const ME = Number(tgUser.id);
+
+// Admin check — compare as numbers (Firebase stores as number, Telegram sends number)
+isAdmin = ADMIN_IDS.map(Number).includes(ME);
+
+// Show role
+const roleBadge = document.getElementById('role-badge');
+roleBadge.textContent = isAdmin ? '🛠 Admin' : '👤 User';
+if (isAdmin) roleBadge.classList.add('admin');
+
+// Debug line — shows your ID so you can verify
+// Click role badge to re-check admin status
+document.getElementById('role-badge').onclick = () => {
+  if (!isAdmin) {
+    checkAndSetAdmin();
+  } else {
+    showToast('🛠 You are admin · ID: ' + ME);
+  }
+};
+console.log('SeatSwap: tgUser.id =', tgUser.id, '| ME =', ME, '| isAdmin =', isAdmin, '| ADMIN_IDS =', ADMIN_IDS);
+
+// Inject admin tabs
+function injectAdminTabs() {
+  const bar = document.getElementById('tabs-bar');
+  // Remove existing admin tabs to avoid duplicates
+  bar.querySelectorAll('.atab').forEach(t => t.remove());
+  [['📊 Stats','admin-stats'],['👥 Users','admin-users'],['🔄 Swaps','admin-swaps'],['💬 Feedbacks','admin-fbs']].forEach(([lbl,id]) => {
+    const b = document.createElement('button');
+    b.className = 'tab atab'; b.textContent = lbl;
+    b.onclick = () => showPage(id);
+    bar.appendChild(b);
+  });
+}
+
+if (isAdmin) {
+  injectAdminTabs();
+} else {
+  // Also check Firebase in case ADMIN_IDS is wrong — async fallback
+  setTimeout(async () => {
+    try {
+      const dbUser = await fbGet(`users/${ME}`);
+      if (dbUser && (dbUser.special_user || dbUser.special_badge?.includes('Official'))) {
+        // Check if this user is in ADMIN_IDS based on bot config
+        const botStatus = await fbGet('bot_status');
+        // Check admin_ids list if stored
+        const adminList = await fbGet('admin_ids');
+        if (adminList && (Array.isArray(adminList) ? adminList : Object.values(adminList)).map(Number).includes(ME)) {
+          isAdmin = true;
+          roleBadge.textContent = '🛠 Admin';
+          roleBadge.classList.add('admin');
+          injectAdminTabs();
+        }
+      }
+    } catch(e) { /* silent */ }
+  }, 1000);
+}
+
+// ════════════════════════════════════════════
+//  FIREBASE REST
+// ════════════════════════════════════════════
+async function fbGet(path) {
+  try { const r = await fetch(`${FB_URL}/${path}.json`); return r.ok ? r.json() : null; }
+  catch { return null; }
+}
+async function fbSet(path, data) {
+  try { await fetch(`${FB_URL}/${path}.json`, { method:'PUT', body:JSON.stringify(data), headers:{'Content-Type':'application/json'} }); return true; }
+  catch { return false; }
+}
+async function fbPatch(path, data) {
+  try { await fetch(`${FB_URL}/${path}.json`, { method:'PATCH', body:JSON.stringify(data), headers:{'Content-Type':'application/json'} }); return true; }
+  catch { return false; }
+}
+async function fbDel(path) {
+  try { await fetch(`${FB_URL}/${path}.json`, { method:'DELETE' }); return true; }
+  catch { return false; }
+}
+
+// ════════════════════════════════════════════
+//  ROUTING
+// ════════════════════════════════════════════
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  const pg = document.getElementById('page-' + id);
+  if (pg) pg.classList.add('active');
+  document.querySelectorAll('.tab').forEach(t => {
+    if (t.getAttribute('onclick')?.includes(`'${id}'`)) t.classList.add('active');
+  });
+  if (id === 'home')         loadHomeStats();
+  if (id === 'my-swap')      loadMySwap();
+  if (id === 'profile')      loadProfile();
+  if (id === 'admin-stats')  loadAdminStats();
+  if (id === 'admin-users')  loadUsers();
+  if (id === 'admin-swaps')  loadAdminSwaps();
+  if (id === 'admin-fbs')    loadFeedbacks();
+}
+
+// ════════════════════════════════════════════
+//  UTILS
+// ════════════════════════════════════════════
+function esc(s) {
+  return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 function timeAgo(ts) {
-  if (!ts) return "";
+  if (!ts) return '';
   try {
-    const d = new Date(ts.replace(/(\d+) (\w+) (\d+) (\d+):(\d+) (AM|PM)/,(_,day,mon,yr,h,m,ampm)=>{
-      const months={"Jan":0,"Feb":1,"Mar":2,"Apr":3,"May":4,"Jun":5,"Jul":6,"Aug":7,"Sep":8,"Oct":9,"Nov":10,"Dec":11};
-      let hour=parseInt(h); if(ampm==="PM"&&hour!==12) hour+=12; if(ampm==="AM"&&hour===12) hour=0;
-      return `${yr}-${String(months[mon]+1).padStart(2,'0')}-${String(day).padStart(2,'0')}T${String(hour).padStart(2,'0')}:${m}:00`;
-    }));
-    const diff = (Date.now()-d.getTime())/60000;
-    if (diff<1) return "just now";
-    if (diff<60) return `${Math.floor(diff)}m ago`;
-    if (diff<1440) return `${Math.floor(diff/60)}h ago`;
-    return `${Math.floor(diff/1440)}d ago`;
-  } catch(e){ return ts; }
+    const mon = {Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11};
+    const p = ts.match(/(\d+) (\w+) (\d+) (\d+):(\d+) (AM|PM)/);
+    if (!p) return ts;
+    let h = +p[4]; if (p[6]==='PM'&&h<12) h+=12; if (p[6]==='AM'&&h===12) h=0;
+    const d = new Date(+p[3], mon[p[2]], +p[1], h, +p[5]);
+    const m = (Date.now()-d)/60000;
+    if (m<1) return 'just now'; if (m<60) return `${~~m}m ago`;
+    if (m<1440) return `${~~(m/60)}h ago`; return `${~~(m/1440)}d ago`;
+  } catch { return ts; }
+}
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2800);
+}
+function sameUser(uid) { return Number(uid) === ME; }
+
+const BADGE_LVL = [[0,'🌱','Newcomer'],[3,'🎫','Regular'],[10,'⭐','Trusted'],[25,'🔰','Expert'],[50,'👑','Master']];
+function calcBadge(swaps, special) {
+  if (special) return special;
+  let b = BADGE_LVL[0];
+  for (const l of BADGE_LVL) if (swaps >= l[0]) b = l;
+  return `${b[0]} ${b[2]}`;
+}
+function progressBar(swaps) {
+  let cur = BADGE_LVL[0], nxt = null;
+  for (let i=0;i<BADGE_LVL.length;i++) { if(swaps>=BADGE_LVL[i][0]){cur=BADGE_LVL[i];nxt=BADGE_LVL[i+1]||null;} }
+  if (!nxt) return { pct:100, label:'👑 Max badge reached!' };
+  const pct = Math.min(100, ((swaps-cur[0])/(nxt[0]-cur[0]))*100);
+  return { pct, label:`${nxt[0]-swaps} more → ${nxt[0]} ${nxt[2]}` };
 }
 
-// ════════════════════════════════════
-//  FIREBASE
-// ════════════════════════════════════
-firebase.initializeApp(FIREBASE_CONFIG);
-const db = firebase.database();
-const FB = {
-  get: p => db.ref(p).once("value").then(s=>s.val()),
-  set: (p,d) => db.ref(p).set(d),
-  upd: (p,d) => db.ref(p).update(d),
-  del: p => db.ref(p).remove(),
-  push: (p,d) => db.ref(p).push(d),
-  on: (p,cb) => { db.ref(p).on("value",s=>cb(s.val())); return ()=>db.ref(p).off("value"); },
-};
+// ════════════════════════════════════════════
+//  HOME STATS + PENDING CONFIRMS
+// ════════════════════════════════════════════
+async function loadHomeStats() {
+  const [swaps, users] = await Promise.all([fbGet('swaps'), fbGet('users')]);
+  const sl = swaps ? Object.values(swaps) : [];
+  const ul = users ? Object.values(users) : [];
+  const active = sl.filter(s=>s.status==='active').length;
+  const done   = ul.reduce((a,u)=>a+(u.swaps_done||0),0);
+  const trains = new Set(sl.filter(s=>s.status==='active').map(s=>s.train)).size;
+  document.getElementById('hs-active').textContent = active;
+  document.getElementById('hs-users').textContent  = ul.length;
+  document.getElementById('hs-done').textContent   = done;
+  document.getElementById('hs-trains').textContent = trains;
 
-// ════════════════════════════════════
-//  APP STATE
-// ════════════════════════════════════
-const App = {
-  tgUser: null,
-  dbUser: null,
-  view: "home",
-  adminTab: "stats",
-  postStep: 1,
-  postData: {},
-  searchTrain: "",
-  searchResults: null,
-  coachView: null,
-  loading: false,
-  stats: {users:0, swaps:0, done:0, feedbacks:0},
-};
-
-function isAdmin() { return ADMIN_IDS.includes(App.tgUser?.id); }
-function esc(s) { return String(s||"").replace(/[<>&"]/g,c=>({
-  "<":"&lt;",">":"&gt;","&":"&amp;",'"':"&quot;"
-})[c]); }
-
-// ════════════════════════════════════
-//  TOAST
-// ════════════════════════════════════
-let toastTimer;
-function toast(msg, dur=2500) {
-  const el = document.getElementById("toast");
-  el.textContent = msg; el.classList.add("show");
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(()=>el.classList.remove("show"), dur);
+  // Check pending confirms for this user
+  await loadPendingConfirms(swaps);
 }
 
-// ════════════════════════════════════
-//  RENDER ENGINE
-// ════════════════════════════════════
-function render() {
-  document.getElementById("app").innerHTML = `<div class="fade-in">${getView()}</div>`;
-  document.getElementById("nav").innerHTML = getNav();
-  attachEvents();
-}
+async function loadPendingConfirms(swaps) {
+  const el = document.getElementById('pending-confirms');
+  if (!swaps) { el.innerHTML = ''; return; }
 
-function getNav() {
-  const v = App.view;
-  const tabs = [
-    {id:"home",   icon:iconHome(),   label:"Home"},
-    {id:"find",   icon:iconSearch(), label:"Find"},
-    {id:"post",   icon:iconSwap(),   label:"Post"},
-    {id:"profile",icon:iconUser(),   label:"Profile"},
-  ];
-  if (isAdmin()) tabs.push({id:"admin", icon:iconAdmin(), label:"Admin"});
-  return tabs.map(t=>`
-    <button class="nav-btn ${v===t.id||v.startsWith(t.id)?"active":""}" data-nav="${t.id}">
-      ${t.icon}<span>${t.label}</span>
-    </button>`).join("");
-}
+  // Find if current user has any swap that got a confirmation from someone else
+  const confirmed = await fbGet('confirmed') || {};
+  // Keys are like "uid_sid" — find where someone confirmed a swap that belongs to ME
+  const mySwap = Object.values(swaps).find(s => sameUser(s.user_id));
+  if (!mySwap) { el.innerHTML = ''; return; }
 
-function getView() {
-  switch(App.view) {
-    case "home":    return viewHome();
-    case "find":    return viewFind();
-    case "post":    return viewPost();
-    case "profile": return viewProfile();
-    case "admin":   return viewAdmin();
-    default:        return viewHome();
-  }
-}
+  const sid = mySwap.swap_id;
+  const myKey = `${ME}_${sid}`;
+  const alreadyConfirmed = confirmed[myKey];
+  const otherConfirmed   = Object.keys(confirmed).some(k => k.endsWith(`_${sid}`) && !k.startsWith(`${ME}_`));
 
-// ════════════════════════════════════
-//  VIEW: HOME
-// ════════════════════════════════════
-function viewHome() {
-  const u = App.dbUser || {}; const name = App.tgUser?.first_name || "User";
-  const badge = getBadge(u.swaps_done||0, u.special_badge||"");
-  const sw = App.mySwap;
-  return `
-  <div class="header">
-    <div class="header-icon">🚆</div>
-    <div>
-      <h2>Hey ${esc(name)}!</h2>
-      <p>${badge}</p>
-    </div>
-  </div>
-  <div class="section">
-    <div class="stats-grid">
-      <div class="stat-card"><div class="stat-num">${App.stats.swaps}</div><div class="stat-label">Active Requests</div></div>
-      <div class="stat-card"><div class="stat-num">${App.stats.done}</div><div class="stat-label">Swaps Completed</div></div>
-      <div class="stat-card"><div class="stat-num">${u.swaps_done||0}</div><div class="stat-label">Your Swaps</div></div>
-      <div class="stat-card"><div class="stat-num">${u.points||0}</div><div class="stat-label">Your Points</div></div>
-    </div>
-    ${sw ? `
-    <div class="card" style="border-left:3px solid var(--warn)">
-      <div class="card-title">📋 Your Active Request</div>
-      <p style="font-size:13px">🚆 <b>${esc(sw.train)}</b> — ${esc(sw.coach)}</p>
-      <p style="font-size:13px;margin-top:4px">💺 Seat <b>${esc(sw.cur_seat)}</b> (${esc(sw.cur_berth)}) → 🔄 <b>${esc(sw.want_berth)}</b>${sw.want_seat&&sw.want_seat!="Any"?` Seat ${esc(sw.want_seat)}`:""}</p>
-      <p style="font-size:11px;color:var(--hint);margin-top:4px">🕐 ${timeAgo(sw.ts)}</p>
-      <div style="margin-top:10px;display:flex;gap:6px">
-        <button class="btn btn-secondary btn-sm" data-action="cancel_swap">❌ Cancel</button>
-        <button class="btn btn-primary btn-sm" data-nav="find">🔍 Browse</button>
-      </div>
-    </div>` : `
-    <button class="btn btn-primary" data-nav="post">🔄 Change Seat</button>
-    <div style="margin-top:8px"></div>
-    <button class="btn btn-secondary" data-nav="find">🔍 Find Seats</button>`}
-    <div style="margin-top:10px"></div>
-    <div class="card">
-      <div class="card-title">🏅 How Badges Work</div>
-      <p style="font-size:12px;color:var(--hint);line-height:1.7">
-        🌱 Newcomer • 🎫 Regular (3+) • ⭐ Trusted (10+) • 🔰 Expert (25+) • 👑 Master (50+)
-      </p>
-    </div>
-  </div>`;
-}
-
-// ════════════════════════════════════
-//  VIEW: FIND
-// ════════════════════════════════════
-function viewFind() {
-  if (App.coachView) return viewCoachDetail();
-  return `
-  <div class="header"><div class="header-icon">🔍</div><div><h2>Find Seats</h2><p>Search by train number</p></div></div>
-  <div class="section">
-    <div class="form-group">
-      <label class="form-label">Train Number</label>
-      <input id="train-search-inp" class="form-input" type="number" placeholder="e.g. 12301" value="${esc(App.searchTrain)}" inputmode="numeric">
-    </div>
-    <button class="btn btn-primary" data-action="do_search">🔍 Search Seats</button>
-    ${App.searchResults === null ? "" :
-      App.searchResults.length === 0 ? `
-      <div class="empty" style="margin-top:20px">
-        <div class="empty-icon">😔</div>
-        <p>No active requests for this train.<br>Be the first to post!</p>
-        <button class="btn btn-primary" style="margin-top:14px;width:auto;padding:10px 20px" data-nav="post">🔄 Post Request</button>
-      </div>` : `
-      <div style="margin-top:14px">
-        <div class="card-title">🚆 Train ${esc(App.searchTrain)} — ${App.searchResults.length} request(s)</div>
-        ${groupByCoach(App.searchResults).map(([coach,items])=>`
-          <div class="train-result" style="cursor:pointer" data-action="view_coach" data-coach="${esc(coach)}">
-            <h3>🚉 Coach ${esc(coach)}</h3>
-            <p>${items.length} seat change request(s)</p>
-          </div>`).join("")}
-      </div>`
-    }
-  </div>`;
-}
-
-function viewCoachDetail() {
-  const items = App.coachView;
-  return `
-  <div class="header">
-    <div style="cursor:pointer;font-size:20px;padding:4px 8px" data-action="back_search">←</div>
-    <div><h2>🚉 Coach ${esc(items[0]?.coach)}</h2><p>${items.length} request(s)</p></div>
-  </div>
-  <div class="section">
-    ${items.map((req,i)=>{
-      const u2 = req._user||{}; const badge = getBadge(u2.swaps_done||0, u2.special_badge||"");
-      const wseat = req.want_seat&&req.want_seat!="Any"?` (prefers seat <b>${esc(req.want_seat)}</b>)`:"";
-      const pnr = req.pnr ? `<br>🎫 PNR: <code>${esc(req.pnr)}</code>` : "";
-      return `
-      <div class="swap-card">
-        <div style="display:flex;align-items:center;gap:6px">
-          <span class="name">${esc(req.name)}</span>
-          <span class="badge">${badge}</span>
-        </div>
-        <div class="seats">💺 Seat <b>${esc(req.cur_seat)}</b> (${esc(req.cur_berth)}) → 🔄 <b>${esc(req.want_berth)}</b>${wseat}${pnr}</div>
-        <div class="info">✅ ${u2.swaps_done||0} swaps · 🕐 ${timeAgo(req.ts)}</div>
-        <div class="actions">
-          <a href="tg://user?id=${req.user_id}" class="btn btn-primary btn-sm">📩 Contact</a>
-          <button class="btn btn-secondary btn-sm" data-action="report_user" data-uid="${req.user_id}">🚩 Report</button>
-        </div>
+  if (otherConfirmed && !alreadyConfirmed) {
+    el.innerHTML = `
+      <div class="confirm-banner">
+        <div class="cb-title">🎉 Match Confirmed by Other Person!</div>
+        <p style="font-size:13px;margin-bottom:10px">Your swap partner confirmed the exchange. Please confirm from your side to earn <b>+10 points</b>!</p>
+        <button class="btn btn-success btn-full" onclick="confirmSwapFromApp('${sid}')">✅ Confirm Swap Done — Earn +10 pts</button>
       </div>`;
-    }).join("")}
-  </div>`;
-}
-
-function groupByCoach(items) {
-  const map = {};
-  items.forEach(r=>{ const c=r.coach||"?"; (map[c]=map[c]||[]).push(r); });
-  return Object.entries(map).sort();
-}
-
-// ════════════════════════════════════
-//  VIEW: POST (multi-step)
-// ════════════════════════════════════
-function viewPost() {
-  const step = App.postStep; const d = App.postData;
-  const dots = Array.from({length:5},(_,i)=>`<div class="step-dot ${i<step-1?"done":i===step-1?"active":""}"></div>`).join("");
-  let content = "";
-
-  if (step===1) content = `
-    <div class="form-group">
-      <label class="form-label">Train Number</label>
-      <input id="p-train" class="form-input" type="number" placeholder="e.g. 12301" inputmode="numeric" value="${esc(d.train||"")}">
-      ${d.train&&TRAINS[d.train]?`<p style="color:var(--success);font-size:12px;margin-top:5px">✅ ${TRAINS[d.train]}</p>`:""}
-    </div>
-    <button class="btn btn-primary" data-action="post_next">Continue →</button>`;
-
-  else if (step===2) content = `
-    <p style="color:var(--hint);font-size:12px;margin-bottom:10px">🚆 Train: <b>${esc(d.train)}</b>${TRAINS[d.train]?" — "+TRAINS[d.train]:""}</p>
-    <div class="form-group"><label class="form-label">Coach Type</label>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
-        ${Object.entries(COACH_TYPES).map(([k,v])=>`<div class="coach-btn ${d.ct===k?"selected":""}" data-action="sel_ct" data-ct="${k}">${v.label}</div>`).join("")}
-      </div>
-    </div>
-    ${d.ct?`<div class="form-group"><label class="form-label">Coach Number</label>
-      <div class="coach-grid">
-        ${COACH_TYPES[d.ct].coaches.map(c=>`<div class="coach-btn ${d.coach===c?"selected":""}" data-action="sel_coach" data-c="${c}">${c}</div>`).join("")}
-      </div></div>
-      <button class="btn btn-primary" data-action="post_next">Continue →</button>`:""}`;
-
-  else if (step===3) content = `
-    <p style="color:var(--hint);font-size:12px;margin-bottom:10px">🚉 <b>${esc(d.coach)}</b> (${esc(d.ct)})</p>
-    <div class="form-group">
-      <label class="form-label">Your Current Seat Number (1–${COACH_TYPES[d.ct]?.max||72})</label>
-      <input id="p-cseat" class="form-input" type="number" placeholder="e.g. 23" inputmode="numeric" value="${esc(d.cseat||"")}">
-      ${d.cseat?`<p style="color:var(--hint);font-size:12px;margin-top:5px">Auto-detected berth: <b>${autoBerth(d.cseat,d.ct)}</b></p>`:""}
-    </div>
-    <button class="btn btn-primary" data-action="post_next">Continue →</button>`;
-
-  else if (step===4) content = `
-    <p style="color:var(--hint);font-size:12px;margin-bottom:10px">💺 Your seat: <b>${esc(d.cseat)}</b> (${esc(d.cberth)})</p>
-    <div class="form-group">
-      <label class="form-label">Specific Seat Number You Want (optional)</label>
-      <input id="p-wseat" class="form-input" type="number" placeholder="e.g. 26 (leave empty for Any)" inputmode="numeric" value="${esc(d.wseat&&d.wseat!="Any"?d.wseat:"")}">
-    </div>
-    <div class="form-group"><label class="form-label">Berth Type You Want</label>
-      <div class="berth-grid">
-        ${(BERTHS_BY_CT[d.ct]||["Lower","Upper"]).map(b=>`<div class="berth-btn ${d.wberth===b?"selected":""}" data-action="sel_wberth" data-b="${b}">${b}</div>`).join("")}
-        <div class="berth-btn ${d.wberth==="Any"?"selected":""}" data-action="sel_wberth" data-b="Any">🔀 Any</div>
-      </div>
-    </div>
-    ${d.wberth?`<button class="btn btn-primary" data-action="post_next">Continue →</button>`:""}`;
-
-  else if (step===5) content = `
-    <div class="card" style="margin-bottom:12px">
-      <div class="card-title">📋 Review Your Request</div>
-      <p>🚆 <b>${esc(d.train)}</b>${TRAINS[d.train]?" — "+TRAINS[d.train]:""}</p>
-      <p style="margin-top:4px">🚉 <b>${esc(d.coach)}</b> (${esc(d.ct)})</p>
-      <p style="margin-top:4px">💺 Has: Seat <b>${esc(d.cseat)}</b> (<b>${esc(d.cberth)}</b>)</p>
-      <p style="margin-top:4px">🔄 Wants: <b>${esc(d.wberth)}</b>${d.wseat&&d.wseat!="Any"?` — Seat <b>${esc(d.wseat)}</b>`:""}</p>
-    </div>
-    <div class="form-group">
-      <label class="form-label">PNR Number (optional, increases trust)</label>
-      <input id="p-pnr" class="form-input" type="number" placeholder="10-digit PNR" inputmode="numeric" value="${esc(d.pnr||"")}">
-    </div>
-    <button class="btn btn-success" data-action="post_submit">✅ Post Request</button>`;
-
-  return `
-  <div class="header"><div class="header-icon">🔄</div><div><h2>Change Seat</h2><p>Step ${step} of 5</p></div></div>
-  <div class="section">
-    <div class="steps">${dots}</div>
-    ${content}
-    ${step>1?`<button class="btn btn-secondary" style="margin-top:8px" data-action="post_back">← Back</button>`:""}
-  </div>`;
-}
-
-// ════════════════════════════════════
-//  VIEW: PROFILE
-// ════════════════════════════════════
-function viewProfile() {
-  const u = App.dbUser||{}; const tg = App.tgUser||{};
-  const sd = u.swaps_done||0; const pts = u.points||0;
-  const badge = getBadge(sd, u.special_badge||"");
-  const special = u.special_user ? `<div style="margin-top:4px;font-size:12px">🌟 Official SeatSwap Family</div>` : "";
-  const pct = sd<3?sd/3:sd<10?(sd-3)/7:sd<25?(sd-10)/15:sd<50?(sd-25)/25:1;
-  const nxtBadge = sd<3?`${3-sd} more → 🎫 Regular`:sd<10?`${10-sd} more → ⭐ Trusted`:sd<25?`${25-sd} more → 🔰 Expert`:sd<50?`${50-sd} more → 👑 Master`:"👑 Max level!";
-  return `
-  <div class="section">
-    <div class="profile-badge">
-      <div class="profile-avatar">${(tg.first_name||"U")[0].toUpperCase()}</div>
-      <div class="profile-name">${esc(tg.first_name||"")}${tg.last_name?" "+esc(tg.last_name):""}</div>
-      <div class="profile-badge-text">${badge}</div>
-      ${special}
-      <div class="profile-stats">
-        <div class="ps-item"><div class="ps-num">${sd}</div><div class="ps-label">Swaps</div></div>
-        <div class="ps-item"><div class="ps-num">${pts}</div><div class="ps-label">Points</div></div>
-        <div class="ps-item"><div class="ps-num">${u.reports||0}</div><div class="ps-label">Reports</div></div>
-      </div>
-    </div>
-    <div class="card">
-      <div class="card-title">📈 Badge Progress</div>
-      <div style="display:flex;justify-content:space-between;margin-bottom:5px"><span>${badge}</span><span style="color:var(--hint);font-size:11px">${nxtBadge}</span></div>
-      <div class="progress-bar"><div class="progress-fill" style="width:${Math.round(pct*100)}%"></div></div>
-    </div>
-    <div class="card">
-      <div class="card-title">ℹ️ Account Info</div>
-      <div class="divider" style="margin-top:0"></div>
-      <div style="display:flex;justify-content:space-between;padding:5px 0"><span style="color:var(--hint)">Telegram ID</span><code style="font-size:12px">${tg.id||""}</code></div>
-      <div class="divider"></div>
-      <div style="display:flex;justify-content:space-between;padding:5px 0"><span style="color:var(--hint)">Username</span><span>@${esc(tg.username||"not set")}</span></div>
-      <div class="divider"></div>
-      <div style="display:flex;justify-content:space-between;padding:5px 0"><span style="color:var(--hint)">Joined</span><span style="font-size:12px">${u.joined||"—"}</span></div>
-      <div class="divider"></div>
-      <div style="display:flex;justify-content:space-between;padding:5px 0"><span style="color:var(--hint)">Language</span><span>${u.lang||"en"}</span></div>
-    </div>
-    <button class="btn btn-secondary" data-action="show_feedback_form">💬 Send Feedback</button>
-    <div id="feedback-form" style="display:none;margin-top:10px">
-      <div class="form-group">
-        <label class="form-label">Your message</label>
-        <textarea id="fb-text" class="form-input" rows="4" placeholder="Write your feedback, suggestion or problem..." style="resize:none;line-height:1.5"></textarea>
-      </div>
-      <button class="btn btn-primary" data-action="submit_feedback">📩 Send Feedback</button>
-    </div>
-  </div>`;
-}
-
-// ════════════════════════════════════
-//  VIEW: ADMIN
-// ════════════════════════════════════
-function viewAdmin() {
-  const tab = App.adminTab;
-  return `
-  <div class="header"><div class="header-icon">⚙️</div><div><h2>Admin Panel</h2><p>Full control</p></div></div>
-  <div class="section">
-    <div class="tabs">
-      ${["stats","users","swaps","feedbacks","broadcast"].map(t=>`
-        <div class="tab ${tab===t?"active":""}" data-action="admin_tab" data-tab="${t}">${{stats:"📊",users:"👥",swaps:"🔄",feedbacks:"💬",broadcast:"📢"}[t]} ${t.charAt(0).toUpperCase()+t.slice(1)}</div>`).join("")}
-    </div>
-    <div id="admin-content">${getAdminTab(tab)}</div>
-  </div>`;
-}
-
-function getAdminTab(tab) {
-  if (tab==="stats") {
-    const s = App.stats;
-    return `
-    <div class="stats-grid">
-      <div class="stat-card"><div class="stat-num">${s.users}</div><div class="stat-label">Total Users</div></div>
-      <div class="stat-card"><div class="stat-num">${s.swaps}</div><div class="stat-label">Active Swaps</div></div>
-      <div class="stat-card"><div class="stat-num">${s.done}</div><div class="stat-label">Completed</div></div>
-      <div class="stat-card"><div class="stat-num">${s.feedbacks}</div><div class="stat-label">Feedbacks</div></div>
-    </div>
-    <button class="btn btn-secondary" data-action="refresh_stats">🔄 Refresh Stats</button>`;
-  }
-  if (tab==="users") {
-    const users = App.allUsers||{};
-    const list = Object.entries(users).slice(0,30);
-    return list.length===0?`<div class="empty"><div class="empty-icon">👥</div><p>No users yet</p></div>`:
-    `<div style="margin-bottom:8px;color:var(--hint);font-size:12px">${Object.keys(users).length} total users</div>
-    ${list.map(([uid,u])=>`
-    <div class="user-row">
-      <div class="user-avatar">${(u.name||"U")[0].toUpperCase()}</div>
-      <div class="user-info">
-        <div class="user-name">${esc(u.name||"")} ${u.special_user?'🌟':''}</div>
-        <div class="user-sub">@${esc(u.username||"?")} · ${getBadge(u.swaps_done||0,u.special_badge||"")} · ${u.swaps_done||0} swaps</div>
-      </div>
-      <div class="user-actions">
-        ${u.banned?`<button class="btn btn-success btn-sm" data-action="unban_user" data-uid="${uid}">Unban</button>`:
-                    `<button class="btn btn-danger btn-sm" data-action="ban_user" data-uid="${uid}">Ban</button>`}
-        <button class="btn btn-secondary btn-sm" data-action="badge_user" data-uid="${uid}" data-name="${esc(u.name||uid)}">🏅</button>
-      </div>
-    </div>`).join("")}`;
-  }
-  if (tab==="swaps") {
-    const swaps = Object.values(App.allSwapsAdmin||{}).filter(s=>s.status==="active");
-    return swaps.length===0?`<div class="empty"><div class="empty-icon">🔄</div><p>No active swaps</p></div>`:
-    swaps.map(sw=>`
-    <div class="swap-card">
-      <div class="name">${esc(sw.name)}</div>
-      <div class="info">🚆 ${esc(sw.train)} · 🚉 ${esc(sw.coach)} · 💺 Seat ${esc(sw.cur_seat)} (${esc(sw.cur_berth)})</div>
-      <div class="info">🔄 Wants: ${esc(sw.want_berth)}${sw.want_seat&&sw.want_seat!="Any"?` Seat ${esc(sw.want_seat)}`:""}  · ${timeAgo(sw.ts)}</div>
-      <button class="btn btn-danger btn-sm" style="margin-top:8px" data-action="admin_del_swap" data-uid="${sw.user_id}">🗑 Delete</button>
-    </div>`).join("");
-  }
-  if (tab==="feedbacks") {
-    const fbs = Object.values(App.feedbacks||{});
-    const sorted = fbs.sort((a,b)=>b.ts>a.ts?1:-1).slice(0,20);
-    return sorted.length===0?`<div class="empty"><div class="empty-icon">💬</div><p>No feedbacks yet</p></div>`:
-    sorted.map(f=>`
-    <div class="feedback-card">
-      <div class="feedback-user">👤 ${esc(f.name||"")} (@${esc(f.username||"?")})</div>
-      <div class="feedback-msg">${esc(f.message||"")}</div>
-      <div class="feedback-time">🕐 ${f.ts||""}</div>
-    </div>`).join("");
-  }
-  if (tab==="broadcast") {
-    return `
-    <div class="card" style="margin-bottom:12px">
-      <div class="card-title">📢 Broadcast Message</div>
-      <p style="color:var(--hint);font-size:12px">Message will be sent to all users via the bot. Make sure bot is running.</p>
-    </div>
-    <div class="form-group">
-      <label class="form-label">Your Message</label>
-      <textarea id="bc-msg" class="form-input" rows="5" placeholder="Type your announcement..." style="resize:none;line-height:1.5"></textarea>
-    </div>
-    <button class="btn btn-primary" data-action="do_broadcast">📢 Save & Broadcast (via /broadcast command in bot)</button>
-    <div class="card" style="margin-top:10px">
-      <div class="card-title">🏅 Give Badge</div>
-      <div class="form-group" style="margin-top:8px">
-        <label class="form-label">User ID</label>
-        <input id="badge-uid" class="form-input" type="number" placeholder="Telegram User ID" inputmode="numeric">
-      </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:8px 0">
-        ${SPECIAL_BADGES.map(b=>`<div class="coach-btn" data-action="quick_badge" data-b="${esc(b)}" style="font-size:11px">${esc(b)}</div>`).join("")}
-      </div>
-      <button class="btn btn-primary" data-action="give_badge_admin">✅ Give Badge</button>
-    </div>`;
-  }
-  return "";
-}
-
-// ════════════════════════════════════
-//  EVENT DELEGATION
-// ════════════════════════════════════
-let selectedAdminBadge = "";
-function attachEvents() {
-  document.addEventListener("click", handler, {once:true});
-  document.getElementById("nav").addEventListener("click", navHandler);
-}
-function navHandler(e) {
-  const btn = e.target.closest("[data-nav]");
-  if (!btn) return;
-  App.view = btn.dataset.nav;
-  App.coachView = null;
-  if (App.view==="post") { App.postStep=1; App.postData={}; }
-  if (App.view==="admin") loadAdminData();
-  render();
-}
-function handler(e) {
-  const el = e.target.closest("[data-action],[data-nav]");
-  if (!el) { document.addEventListener("click",handler,{once:true}); return; }
-  if (el.dataset.nav) { navHandler(e); return; }
-  const a = el.dataset.action;
-  if (a==="do_search") doSearch();
-  else if (a==="view_coach") viewCoach(el.dataset.coach);
-  else if (a==="back_search") { App.coachView=null; render(); }
-  else if (a==="post_next") postNext();
-  else if (a==="post_back") { App.postStep=Math.max(1,App.postStep-1); render(); }
-  else if (a==="post_submit") postSubmit();
-  else if (a==="sel_ct") { App.postData.ct=el.dataset.ct; App.postData.coach=""; render(); }
-  else if (a==="sel_coach") { App.postData.coach=el.dataset.c; render(); }
-  else if (a==="sel_wberth") { App.postData.wberth=el.dataset.b; render(); }
-  else if (a==="admin_tab") { App.adminTab=el.dataset.tab; render(); loadAdminData(); }
-  else if (a==="ban_user") banUser(el.dataset.uid, true);
-  else if (a==="unban_user") banUser(el.dataset.uid, false);
-  else if (a==="badge_user") showBadgeDialog(el.dataset.uid, el.dataset.name);
-  else if (a==="admin_del_swap") adminDelSwap(el.dataset.uid);
-  else if (a==="cancel_swap") cancelSwap();
-  else if (a==="refresh_stats") loadStats();
-  else if (a==="report_user") reportUser(el.dataset.uid);
-  else if (a==="contact_user") contactUser(el.dataset.uid, el.dataset.sid, el.dataset.sname);
-  else if (a==="show_feedback_form") { document.getElementById("feedback-form").style.display="block"; }
-  else if (a==="submit_feedback") submitFeedback();
-  else if (a==="quick_badge") { selectedAdminBadge=el.dataset.b; document.querySelectorAll("[data-action=quick_badge]").forEach(b=>b.classList.remove("selected")); el.classList.add("selected"); }
-  else if (a==="give_badge_admin") giveAdminBadge();
-  else if (a==="do_broadcast") saveBroadcast();
-  document.addEventListener("click",handler,{once:true});
-}
-
-// ════════════════════════════════════
-//  ACTIONS
-// ════════════════════════════════════
-async function doSearch() {
-  const inp = document.getElementById("train-search-inp");
-  if (!inp) return;
-  const train = inp.value.trim().toUpperCase();
-  if (!train) { toast("Enter a train number"); return; }
-  App.searchTrain = train; App.coachView = null;
-  const all = await FB.get("swaps") || {};
-  const myId = App.tgUser?.id;
-  // Filter: active, not own request
-  const results = Object.values(all).filter(s =>
-    s.train===train && s.status==="active" && s.user_id !== myId
-  );
-  for (const r of results) { r._user = await FB.get(`users/${r.user_id}`) || {}; }
-  App.searchResults = results;
-  render();
-}
-
-async function viewCoach(coach) {
-  const items = (App.searchResults||[]).filter(r=>r.coach===coach);
-  App.coachView = items;
-  render();
-}
-
-function postNext() {
-  const step = App.postStep; const d = App.postData;
-  if (step===1) {
-    const v = document.getElementById("p-train")?.value?.trim();
-    if (!v||!/^\d{4,6}$/.test(v)) { toast("Enter 4–6 digit train number"); return; }
-    d.train = v.toUpperCase();
-    App.postStep = 2;
-  } else if (step===2) {
-    if (!d.ct) { toast("Select coach type"); return; }
-    if (!d.coach) { toast("Select coach number"); return; }
-    App.postStep = 3;
-  } else if (step===3) {
-    const v = document.getElementById("p-cseat")?.value?.trim();
-    const max = COACH_TYPES[d.ct]?.max||72;
-    if (!v||!Number.isInteger(+v)||+v<1||+v>max) { toast(`Enter seat 1–${max}`); return; }
-    d.cseat = v; d.cberth = autoBerth(v, d.ct);
-    App.postStep = 4;
-  } else if (step===4) {
-    const sv = document.getElementById("p-wseat")?.value?.trim();
-    const max = COACH_TYPES[d.ct]?.max||72;
-    if (sv && (!Number.isInteger(+sv)||+sv<1||+sv>max)) { toast(`Seat must be 1–${max} or empty`); return; }
-    if (!d.wberth) { toast("Select berth type"); return; }
-    d.wseat = sv || "Any";
-    App.postStep = 5;
-  }
-  render();
-}
-
-async function postSubmit() {
-  const d = App.postData;
-  const pnrV = document.getElementById("p-pnr")?.value?.trim();
-  if (pnrV && !/^\d{10}$/.test(pnrV)) { toast("PNR must be 10 digits or empty"); return; }
-  d.pnr = pnrV || "";
-  const uid = App.tgUser.id;
-  // Delete old swap
-  const old = await FB.get("swaps")||{};
-  for (const [k,v] of Object.entries(old)) { if(v.user_id===uid) await FB.del(`swaps/${k}`); }
-  // Save new
-  const sid = Date.now().toString(36);
-  await FB.set(`swaps/${sid}`, {
-    swap_id: sid, user_id: uid,
-    name: App.tgUser.first_name, username: App.tgUser.username||"",
-    badge: getBadge(App.dbUser?.swaps_done||0, App.dbUser?.special_badge||""),
-    train: d.train, train_name: TRAINS[d.train]||d.train,
-    coach_type: d.ct, coach: d.coach,
-    cur_seat: d.cseat, cur_berth: d.cberth,
-    want_seat: d.wseat, want_berth: d.wberth,
-    pnr: d.pnr, status: "active",
-    ts: new Date().toLocaleString("en-IN",{day:"2-digit",month:"short",year:"numeric",hour:"2-digit",minute:"2-digit",hour12:true}).replace(",",""),
-  });
-  App.mySwap = await getMySwap();
-  toast("✅ Request posted successfully!");
-  App.view = "home"; App.postStep=1; App.postData={};
-  render();
-}
-
-async function cancelSwap() {
-  const uid = App.tgUser.id;
-  const all = await FB.get("swaps")||{};
-  for (const [k,v] of Object.entries(all)) { if(v.user_id===uid) await FB.del(`swaps/${k}`); }
-  App.mySwap = null;
-  toast("✅ Request cancelled");
-  render();
-}
-
-async function contactUser(ownerUid, swapId, ownerName) {
-  const myUid  = App.tgUser.id;
-  const myName = App.tgUser.first_name;
-  const ownerU = parseInt(ownerUid);
-  if (myUid === ownerU) { toast("This is your own request!"); return; }
-
-  // Write contact request to Firebase — bot job will pick this up
-  const key = `${swapId}_${myUid}`;
-  const existing = await FB.get(`contact_requests/${key}`);
-  if (!existing) {
-    await FB.set(`contact_requests/${key}`, {
-      swap_id:          swapId,
-      swap_owner_id:    ownerU,
-      swap_owner_name:  ownerName,
-      contactor_id:     myUid,
-      contactor_name:   myName,
-      contactor_uname:  App.tgUser.username || "",
-      notified:         false,
-      ts: new Date().toLocaleString(),
-    });
-    toast("📩 Opening chat... After swap, bot will send Confirm button to both of you!");
+  } else if (alreadyConfirmed && !otherConfirmed) {
+    el.innerHTML = `<div class="card" style="border-color:var(--yellow)"><p style="font-size:13px;color:var(--yellow)">⏳ You confirmed! Waiting for your swap partner to also confirm...</p></div>`;
   } else {
-    toast("📩 Opening chat...");
+    el.innerHTML = '';
   }
-
-  // Open Telegram DM
-  setTimeout(() => {
-    window.Telegram?.WebApp?.openTelegramLink
-      ? window.Telegram.WebApp.openTelegramLink(`tg://user?id=${ownerU}`)
-      : window.open(`tg://user?id=${ownerU}`, "_blank");
-  }, 800);
 }
 
-async function reportUser(uid) {
-  const reporter = App.tgUser.id;
-  if (reporter==uid) { toast("❌ Can't report yourself"); return; }
-  const key = `reports/${reporter}_${uid}`;
-  if (await FB.get(key)) { toast("Already reported"); return; }
-  await FB.set(key, true);
-  const u = await FB.get(`users/${uid}`)||{}; const cnt = (u.reports||0)+1;
-  await FB.upd(`users/${uid}`,{reports:cnt});
-  if (cnt>=3) { await FB.upd(`users/${uid}`,{banned:true}); toast("⚠️ User reported and banned"); }
-  else toast(`Reported (${cnt}/3 before ban)`);
+// ════════════════════════════════════════════
+//  CONFIRM SWAP FROM MINI APP
+// ════════════════════════════════════════════
+async function confirmSwapFromApp(sid) {
+  const key = `confirmed/${ME}_${sid}`;
+  const already = await fbGet(key);
+  if (already) { showToast('Already confirmed!'); return; }
+
+  await fbSet(key, true);
+  const allConf = await fbGet('confirmed') || {};
+  const parties = Object.keys(allConf).filter(k => k.endsWith(`_${sid}`));
+
+  if (parties.length >= 2) {
+    // Award both
+    const u = await fbGet(`users/${ME}`) || {};
+    const sd = (u.swaps_done||0) + 1;
+    const pt = (u.points||0) + 10;
+    await fbPatch(`users/${ME}`, { swaps_done: sd, points: pt, badge: calcBadge(sd, u.special_badge||'') });
+    // Award other
+    for (const ck of parties) {
+      const ouid = ck.replace(`_${sid}`,'');
+      if (Number(ouid) !== ME) {
+        const ou = await fbGet(`users/${ouid}`) || {};
+        const osd = (ou.swaps_done||0)+1, opt = (ou.points||0)+10;
+        await fbPatch(`users/${ouid}`, { swaps_done:osd, points:opt, badge:calcBadge(osd,ou.special_badge||'') });
+      }
+    }
+    await fbSet(`matches/${sid}`, { completed: new Date().toLocaleString() });
+    showToast('🎉 Swap Confirmed! +10 points earned!');
+    document.getElementById('pending-confirms').innerHTML = '';
+    loadHomeStats();
+    loadMySwap();
+    loadProfile();
+  } else {
+    showToast('⏳ Confirmation saved! Waiting for partner...');
+    loadHomeStats();
+  }
+}
+
+// ════════════════════════════════════════════
+//  FIND SEAT
+// ════════════════════════════════════════════
+let searchTimer;
+function onTrainInput() {
+  clearTimeout(searchTimer);
+  const v = document.getElementById('find-train').value.trim();
+  if (v.length >= 4) { searchTimer = setTimeout(doSearch, 600); }
+  else { document.getElementById('find-results').innerHTML = '<div class="empty"><div class="empty-icon">🔍</div><p>Enter at least 4 digits</p></div>'; }
+}
+
+async function doSearch() {
+  const train = document.getElementById('find-train').value.trim().toUpperCase();
+  const ct    = document.getElementById('find-ct').value;
+  const el    = document.getElementById('find-results');
+  if (train.length < 4) return;
+
+  el.innerHTML = '<div class="loader"><div class="spin"></div> Searching...</div>';
+  const swaps = await fbGet('swaps') || {};
+
+  // KEY FIX: compare as Number to avoid type mismatch
+  const results = Object.values(swaps).filter(s =>
+    s.status === 'active' &&
+    s.train  === train &&
+    (!ct || s.coach_type === ct) &&
+    Number(s.user_id) !== ME   // ← Fixed: force Number comparison
+  );
+
+  if (!results.length) {
+    el.innerHTML = `<div class="empty"><div class="empty-icon">😔</div><p>No active swaps for Train ${esc(train)}</p><button class="btn btn-primary" style="margin-top:12px" onclick="showPage('my-swap')">🔄 Post Your Swap</button></div>`;
+    return;
+  }
+
+  // Sort: matching berths first (smart match)
+  const mySwap = Object.values(swaps).find(s => sameUser(s.user_id));
+
+  el.innerHTML = results.map(r => {
+    const isMatch = mySwap && checkMatch(mySwap, r);
+    return `
+    <div class="sc ${isMatch ? 'match-card' : ''}">
+      ${isMatch ? '<div style="color:var(--green);font-size:12px;font-weight:700;margin-bottom:6px">🎯 POSSIBLE MATCH!</div>' : ''}
+      <div class="sc-hdr">
+        <div>
+          <div class="sc-name">${esc(r.name)} <span style="font-size:11px;color:var(--muted)">${esc(r.badge||'🌱')}</span></div>
+          <div class="sc-badge">🚉 Coach ${esc(r.coach)} · ${esc(r.coach_type)}</div>
+        </div>
+        <div class="sc-time">${timeAgo(r.ts)}</div>
+      </div>
+      <div class="sc-row"><span class="sc-lbl">Has</span><span>Seat <b>${esc(r.cur_seat)}</b> <span style="color:var(--muted)">(${esc(r.cur_berth)})</span></span></div>
+      <div class="sc-row"><span class="sc-lbl">Wants</span><span>Seat <b>${esc(r.want_seat)}</b> <span style="color:var(--muted)">(${esc(r.want_berth)})</span></span></div>
+      ${r.pnr ? '<div style="font-size:11px;color:var(--muted);margin-top:4px">🎫 PNR Verified</div>' : ''}
+      <div class="sc-acts">
+        <a href="tg://user?id=${r.user_id}" class="btn btn-primary btn-sm" style="text-decoration:none">📩 Contact</a>
+        ${isMatch ? `<button class="btn btn-success btn-sm" onclick="openConfirmModal('${r.swap_id}','${esc(r.name)}')">✅ Confirm Match</button>` : ''}
+        <button class="btn btn-danger btn-sm" onclick="reportUser(${r.user_id},'${esc(r.name)}')">🚩 Report</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function checkMatch(mySwap, other) {
+  if (!mySwap) return false;
+  const opp = {
+    'lower':['upper','middle','any'], 'upper':['lower','middle','any'],
+    'middle':['lower','upper','any'], 'side lower':['side upper','any'],
+    'side upper':['side lower','any'], 'window':['aisle','middle','any'],
+    'aisle':['window','middle','any'], 'any':['lower','upper','middle','side lower','side upper','window','aisle','any']
+  };
+  const nw = (mySwap.want_berth||'').toLowerCase();
+  const nc = (mySwap.cur_berth||'').toLowerCase();
+  const tw = (other.want_berth||'').toLowerCase();
+  const tc = (other.cur_berth||'').toLowerCase();
+  return (tw===nc || (opp[nc]||[]).includes(tw)) || (nw===tc || (opp[tc]||[]).includes(nw));
+}
+
+// ════════════════════════════════════════════
+//  CONFIRM MODAL (from Find page)
+// ════════════════════════════════════════════
+function openConfirmModal(otherSid, otherName) {
+  document.getElementById('confirm-modal-body').innerHTML = `
+    <p style="font-size:14px;margin-bottom:14px">Have you <b>physically exchanged seats</b> with <b>${esc(otherName)}</b>?</p>
+    <p style="font-size:12px;color:var(--muted);margin-bottom:16px">Both parties must confirm. Points (+10) will be awarded after both confirm. This cannot be undone.</p>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-success" style="flex:1" onclick="doConfirmFromFind('${otherSid}')">✅ Yes, Swap Done!</button>
+      <button class="btn btn-secondary" style="flex:1" onclick="document.getElementById('confirm-modal').classList.remove('open')">Cancel</button>
+    </div>`;
+  document.getElementById('confirm-modal').classList.add('open');
+}
+
+async function doConfirmFromFind(otherSid) {
+  document.getElementById('confirm-modal').classList.remove('open');
+
+  // Get MY swap id
+  const swaps = await fbGet('swaps') || {};
+  const mySwap = Object.values(swaps).find(s => sameUser(s.user_id));
+  if (!mySwap) { showToast('❌ You have no active swap to confirm'); return; }
+
+  // We confirm MY sid (not the other person's)
+  await confirmSwapFromApp(mySwap.swap_id);
+
+  // Also store that I confirmed against their sid
+  await fbSet(`confirmed/${ME}_${otherSid}`, true);
+  showToast('✅ Your confirmation saved!');
+}
+
+// ════════════════════════════════════════════
+//  MY SWAP
+// ════════════════════════════════════════════
+async function loadMySwap() {
+  const el = document.getElementById('my-swap-content');
+  const swaps = await fbGet('swaps') || {};
+  const entry = Object.entries(swaps).find(([k,v]) => sameUser(v.user_id));
+
+  if (!entry) {
+    el.innerHTML = `
+      <div class="empty"><div class="empty-icon">📋</div><p>No active swap request</p></div>
+      <div style="text-align:center;margin-top:12px">
+        <p style="font-size:13px;color:var(--muted);margin-bottom:12px">Go to the bot to post a new seat change request</p>
+        <button class="btn btn-primary" onclick="tg?.close?.()">↩ Open Bot</button>
+      </div>`;
+    return;
+  }
+
+  const [sid, s] = entry;
+  const confirmed = await fbGet('confirmed') || {};
+  const iConfirmed   = !!confirmed[`${ME}_${sid}`];
+  const theyConfirmed = Object.keys(confirmed).some(k => k.endsWith(`_${sid}`) && !k.startsWith(`${ME}_`));
+
+  el.innerHTML = `
+    <div class="card" style="border-color:rgba(79,142,247,.3)">
+      <div class="card-title">Your Active Request ✅</div>
+      <div style="margin-top:8px">
+        <div class="ir"><span class="ir-lbl">Train</span><span><b>${esc(s.train)}</b> — ${esc(s.train_name||s.train)}</span></div>
+        <div class="ir"><span class="ir-lbl">Coach</span><span><b>${esc(s.coach)}</b> (${esc(s.coach_type)})</span></div>
+        <div class="ir"><span class="ir-lbl">Has</span><span>Seat <b>${esc(s.cur_seat)}</b> (${esc(s.cur_berth)})</span></div>
+        <div class="ir"><span class="ir-lbl">Wants</span><span>Seat <b>${esc(s.want_seat)}</b> (${esc(s.want_berth)})</span></div>
+        ${s.pnr ? `<div class="ir"><span class="ir-lbl">PNR</span><span style="font-family:monospace">${esc(s.pnr)}</span></div>` : ''}
+        <div class="ir"><span class="ir-lbl">Posted</span><span>${timeAgo(s.ts)}</span></div>
+      </div>
+    </div>
+    ${iConfirmed && !theyConfirmed ? `
+      <div class="card" style="border-color:var(--yellow)">
+        <p style="color:var(--yellow);font-size:13px">⏳ You confirmed! Waiting for your swap partner to confirm...</p>
+      </div>` : ''}
+    ${theyConfirmed && !iConfirmed ? `
+      <div class="confirm-banner">
+        <div class="cb-title">🎉 Your partner confirmed!</div>
+        <p style="font-size:13px;margin-bottom:10px">Confirm from your side to earn <b>+10 points</b> and get your badge!</p>
+        <button class="btn btn-success btn-full" onclick="confirmSwapFromApp('${sid}')">✅ Confirm Swap Done — Earn +10 pts</button>
+      </div>` : ''}
+    <button class="btn btn-danger btn-full" style="margin-top:4px" onclick="deleteMySwap('${sid}')">🗑 Delete Request</button>`;
+}
+
+async function deleteMySwap(sid) {
+  if (!confirm('Delete your swap request?')) return;
+  await fbDel(`swaps/${sid}`);
+  showToast('✅ Request deleted');
+  loadMySwap();
+  loadHomeStats();
+}
+
+// ════════════════════════════════════════════
+//  PROFILE
+// ════════════════════════════════════════════
+async function loadProfile() {
+  const el = document.getElementById('profile-content');
+  const u  = await fbGet(`users/${ME}`);
+  if (!u) {
+    el.innerHTML = `<div class="empty"><div class="empty-icon">👤</div><p>Profile not found. Start the bot first!</p></div>`;
+    return;
+  }
+  const sd  = u.swaps_done||0, pts = u.points||0;
+  const bdg = calcBadge(sd, u.special_badge||'');
+  const {pct, label} = progressBar(sd);
+  el.innerHTML = `
+    <div class="ph">
+      <div class="pa">👤</div>
+      <div class="pname">${esc(u.name||tgUser.first_name)}</div>
+      <div class="pbadge">@${esc(u.username||'no username')}</div>
+      <div style="font-size:16px;margin-top:6px">${esc(bdg)}</div>
+      ${u.special_user ? '<div style="color:var(--yellow);font-size:13px;margin-top:3px">🌟 Official SeatSwap Family</div>' : ''}
+    </div>
+    <div class="sgrid">
+      <div class="sbox"><div class="snum">${sd}</div><div class="slbl">Swaps Done</div></div>
+      <div class="sbox"><div class="snum">${pts}</div><div class="slbl">Points</div></div>
+    </div>
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px">
+        <span>${esc(bdg)}</span>
+        <span style="color:var(--muted)">${label}</span>
+      </div>
+      <div class="prog-track"><div class="prog-fill" style="width:${pct}%"></div></div>
+    </div>
+    <div class="card">
+      <div class="ir"><span class="ir-lbl">Joined</span><span>${esc(u.joined||'—')}</span></div>
+      <div class="ir"><span class="ir-lbl">Language</span><span>${({'en':'English 🇬🇧','hi':'हिन्दी 🇮🇳','bn':'বাংলা 🇧🇩','ur':'اردو 🇵🇰'})[u.lang]||'English'}</span></div>
+      <div class="ir"><span class="ir-lbl">Account</span><span>${u.banned?'<span style="color:var(--red)">🚫 Suspended</span>':'<span style="color:var(--green)">✅ Active</span>'}</span></div>
+      <div class="ir"><span class="ir-lbl">Reports</span><span>${u.reports||0}</span></div>
+    </div>
+    <div class="card">
+      <div class="card-title">💬 Send Feedback</div>
+      <textarea class="inp" id="fb-text" rows="3" placeholder="Your message, suggestion or problem..." style="resize:none;margin-bottom:8px"></textarea>
+      <button class="btn btn-primary btn-full" onclick="submitFeedback()">📩 Send</button>
+    </div>`;
 }
 
 async function submitFeedback() {
-  const msg = document.getElementById("fb-text")?.value?.trim();
-  if (!msg) { toast("Write something first"); return; }
-  const uid = App.tgUser.id; const u = App.dbUser||{};
-  await FB.set(`feedbacks/${uid}_${Date.now()}`,{
-    user_id:uid, name:u.name||"", username:u.username||"",
-    message:msg, ts:new Date().toLocaleString(),
+  const msg = document.getElementById('fb-text')?.value?.trim();
+  if (!msg) { showToast('Write something first'); return; }
+  const u = await fbGet(`users/${ME}`) || {};
+  await fbSet(`feedbacks/${ME}_${Date.now()}`, {
+    user_id: ME, name: u.name||'', username: u.username||'',
+    message: msg, ts: new Date().toLocaleString()
   });
-  toast("✅ Feedback sent! Thank you.");
-  document.getElementById("feedback-form").style.display="none";
-  document.getElementById("fb-text").value="";
+  showToast('✅ Feedback sent! Thank you.');
+  document.getElementById('fb-text').value = '';
 }
 
-async function banUser(uid, ban) {
-  await FB.upd(`users/${uid}`,{banned:ban, reports: ban?3:0});
-  toast(ban ? `🚫 User ${uid} banned` : `✅ User ${uid} unbanned`);
-  loadAdminData();
-}
-
-function showBadgeDialog(uid, name) {
-  const badge = prompt(`Give special badge to ${name}:\n\nOptions:\n${SPECIAL_BADGES.join(", ")}\n\nOr enter custom emoji + name:`);
-  if (!badge) return;
-  FB.upd(`users/${uid}`,{special_badge:badge, badge:badge}).then(()=>{
-    toast(`✅ Badge "${badge}" given`); loadAdminData();
-  });
-}
-
-async function adminDelSwap(uid) {
-  const all = await FB.get("swaps")||{};
-  for (const [k,v] of Object.entries(all)) { if(v.user_id==uid) await FB.del(`swaps/${k}`); }
-  toast("🗑 Swap deleted"); loadAdminData();
-}
-
-async function giveAdminBadge() {
-  const uid = document.getElementById("badge-uid")?.value?.trim();
-  if (!uid) { toast("Enter user ID"); return; }
-  if (!selectedAdminBadge) { toast("Select a badge"); return; }
-  await FB.upd(`users/${uid}`,{special_badge:selectedAdminBadge, badge:selectedAdminBadge});
-  toast(`✅ ${selectedAdminBadge} given to ${uid}`);
-}
-
-function saveBroadcast() {
-  const msg = document.getElementById("bc-msg")?.value?.trim();
-  if (!msg) { toast("Write a message first"); return; }
-  FB.set("broadcast/pending",{message:msg, ts:new Date().toLocaleString(), from: App.tgUser.id});
-  toast("✅ Message saved! Use /broadcast in bot to send.");
-}
-
-// ════════════════════════════════════
-//  DATA LOADING
-// ════════════════════════════════════
-async function getMySwap() {
-  const uid = App.tgUser?.id; if (!uid) return null;
-  const all = await FB.get("swaps")||{};
-  return Object.values(all).find(s=>s.user_id===uid)||null;
-}
-
-async function loadStats() {
-  const users = await FB.get("users")||{};
-  const swaps = await FB.get("swaps")||{};
-  const matches = await FB.get("matches")||{};
-  const fbs = await FB.get("feedbacks")||{};
-  App.stats = {
-    users: Object.keys(users).length,
-    swaps: Object.values(swaps).filter(s=>s.status==="active").length,
-    done:  Object.values(users).reduce((a,u)=>a+(u.swaps_done||0),0),
-    feedbacks: Object.keys(fbs).length,
-  };
-}
-
-async function loadAdminData() {
-  await loadStats();
-  if (App.adminTab==="users") App.allUsers = await FB.get("users")||{};
-  if (App.adminTab==="swaps") App.allSwapsAdmin = await FB.get("swaps")||{};
-  if (App.adminTab==="feedbacks") App.feedbacks = await FB.get("feedbacks")||{};
-  render();
-}
-
-// ════════════════════════════════════
-//  INIT
-// ════════════════════════════════════
-async function init() {
-  const tg = window.Telegram?.WebApp;
-  if (tg) { tg.ready(); tg.expand(); }
-  const user = tg?.initDataUnsafe?.user;
-  if (!user) {
-    // Dev mode — use dummy user
-    App.tgUser = {id:0, first_name:"Test", username:"testuser"};
+// ════════════════════════════════════════════
+//  REPORT
+// ════════════════════════════════════════════
+async function reportUser(uid, name) {
+  if (Number(uid) === ME) { showToast('❌ Cannot report yourself'); return; }
+  if (!confirm(`Report ${name}?`)) return;
+  const key = `reports/${ME}_${uid}`;
+  const already = await fbGet(key);
+  if (already) { showToast('Already reported'); return; }
+  await fbSet(key, true);
+  const u = await fbGet(`users/${uid}`) || {};
+  const cnt = (u.reports||0)+1;
+  await fbPatch(`users/${uid}`, { reports: cnt });
+  if (cnt >= 3) {
+    await fbPatch(`users/${uid}`, { banned: true });
+    showToast('⚠️ User reported & auto-banned (3/3)');
   } else {
-    App.tgUser = user;
+    showToast(`🚩 Reported (${cnt}/3 before ban)`);
   }
-  const uid = App.tgUser.id;
-  // Ensure user exists
-  const existing = await FB.get(`users/${uid}`);
-  if (!existing) {
-    await FB.set(`users/${uid}`,{
-      name: App.tgUser.first_name, username: App.tgUser.username||"",
-      lang:"en", points:0, swaps_done:0, badge:"🌱 Newcomer",
-      banned:false, reports:0, special_user:false, special_badge:"",
-      joined: new Date().toLocaleDateString("en-IN",{day:"2-digit",month:"short",year:"numeric"}),
-    });
-  }
-  App.dbUser = await FB.get(`users/${uid}`);
-  if (App.dbUser?.banned) {
-    document.getElementById("loader").innerHTML = `<div style="text-align:center;padding:20px"><p style="font-size:18px">🚫</p><p style="margin-top:10px;color:var(--danger)">Your account has been suspended.</p></div>`;
-    return;
-  }
-  await loadStats();
-  App.mySwap = await getMySwap();
-  document.getElementById("loader").style.display="none";
-  document.getElementById("app").style.display="block";
-  render();
 }
 
-init().catch(e=>{
-  console.error(e);
-  document.getElementById("loader").innerHTML=`<div style="text-align:center;padding:20px;color:var(--danger)"><p>⚠️ Error loading app</p><p style="font-size:12px;margin-top:8px">${e.message}</p></div>`;
-});
+// ════════════════════════════════════════════
+//  ADMIN — STATS
+// ════════════════════════════════════════════
+async function loadAdminStats() {
+  if (!isAdmin) return;
+  const [swaps, users, reports, fbs] = await Promise.all([fbGet('swaps'),fbGet('users'),fbGet('all_reports'),fbGet('feedbacks')]);
+  const sl = swaps ? Object.values(swaps) : [];
+  const ul = users ? Object.values(users) : [];
+  document.getElementById('a-users').textContent   = ul.length;
+  document.getElementById('a-active').textContent  = sl.filter(s=>s.status==='active').length;
+  document.getElementById('a-done').textContent    = ul.reduce((a,u)=>a+(u.swaps_done||0),0);
+  document.getElementById('a-banned').textContent  = ul.filter(u=>u.banned).length;
+  document.getElementById('a-reports').textContent = reports ? Object.keys(reports).length : 0;
+  document.getElementById('a-fbs').textContent     = fbs ? Object.keys(fbs).length : 0;
+  const bs = await fbGet('bot_status');
+  document.getElementById('db-status').innerHTML = bs
+    ? `<span style="color:var(--green)">🟢 Online</span> · Boot: ${esc(bs.boot||'—')}`
+    : `<span style="color:var(--red)">🔴 Offline</span>`;
+}
 
-// ════════════════════════════════════
-//  ICONS (inline SVG)
-// ════════════════════════════════════
-function iconHome(){return`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>`}
-function iconSearch(){return`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>`}
-function iconSwap(){return`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 16V4m0 0L3 8m4-4l4 4"/><path d="M17 8v12m0 0l4-4m-4 4l-4-4"/></svg>`}
-function iconUser(){return`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`}
-function iconAdmin(){return`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>`}
+// ════════════════════════════════════════════
+//  ADMIN — USERS
+// ════════════════════════════════════════════
+let allUsers = {};
+async function loadUsers() {
+  if (!isAdmin) return;
+  allUsers = await fbGet('users') || {};
+  renderUsers(Object.entries(allUsers));
+}
+function filterUsers() {
+  const q = document.getElementById('user-search').value.toLowerCase();
+  renderUsers(Object.entries(allUsers).filter(([uid,u]) => (u.name||'').toLowerCase().includes(q)||(u.username||'').toLowerCase().includes(q)));
+}
+function renderUsers(entries) {
+  const el = document.getElementById('users-list');
+  if (!entries.length) { el.innerHTML = '<div class="empty"><div class="empty-icon">👥</div><p>No users found</p></div>'; return; }
+  el.innerHTML = entries.slice(0,50).map(([uid,u]) => `
+    <div class="ur">
+      <div>
+        <div class="ur-name">${esc(u.name||'?')} ${u.banned?'🚫':''} ${u.special_user?'🌟':''}</div>
+        <div class="ur-meta">@${esc(u.username||'—')} · ${esc(u.badge||'🌱')} · ${u.swaps_done||0} swaps</div>
+      </div>
+      <div class="ur-acts">
+        <button class="btn btn-secondary btn-sm" onclick="openUserModal('${uid}')">👁</button>
+        <button class="btn ${u.banned?'btn-success':'btn-danger'} btn-sm" onclick="${u.banned?'unbanUser':'banUser'}('${uid}','${esc(u.name)}')">
+          ${u.banned?'✅':'🚫'}
+        </button>
+      </div>
+    </div>`).join('');
+}
+const SB = {Master:'👑 Master',VIP:'⭐ VIP',Trusted:'🛡 Trusted',Premium:'💎 Premium',Family:'👨‍👩‍👧‍👦 Family',Official:'✅ Official'};
+
+function openUserModal(uid) {
+  const u = allUsers[uid]; if (!u) return;
+  document.getElementById('modal-title').textContent = `👤 ${u.name}`;
+  document.getElementById('modal-body').innerHTML = `
+    <div style="font-size:13px">
+      <div class="ir"><span class="ir-lbl">ID</span><span style="font-family:monospace">${uid}</span></div>
+      <div class="ir"><span class="ir-lbl">Username</span><span>@${esc(u.username||'—')}</span></div>
+      <div class="ir"><span class="ir-lbl">Badge</span><span>${esc(u.badge||'—')}</span></div>
+      <div class="ir"><span class="ir-lbl">Special</span><span>${esc(u.special_badge||'None')}</span></div>
+      <div class="ir"><span class="ir-lbl">Swaps</span><span>${u.swaps_done||0}</span></div>
+      <div class="ir"><span class="ir-lbl">Points</span><span>${u.points||0}</span></div>
+      <div class="ir"><span class="ir-lbl">Reports</span><span>${u.reports||0}</span></div>
+      <div class="ir"><span class="ir-lbl">Joined</span><span>${esc(u.joined||'—')}</span></div>
+      <div class="ir"><span class="ir-lbl">Status</span><span>${u.banned?'🚫 Banned':'✅ Active'}</span></div>
+    </div>
+    <hr/>
+    <div style="display:flex;flex-wrap:wrap;gap:7px;margin-bottom:10px">
+      ${Object.entries(SB).map(([k,v])=>`<button class="btn btn-secondary btn-sm" onclick="giveBadge('${uid}','${esc(v)}')">${esc(v)}</button>`).join('')}
+    </div>
+    <div style="display:flex;gap:7px">
+      <button class="btn btn-secondary btn-sm" onclick="setFamily('${uid}','${esc(u.name)}')">🌟 Set Family</button>
+      <button class="btn ${u.banned?'btn-success':'btn-danger'} btn-sm" onclick="${u.banned?'unbanUser':'banUser'}('${uid}','${esc(u.name)}')">${u.banned?'✅ Unban':'🚫 Ban'}</button>
+      <button class="btn btn-danger btn-sm" onclick="removeBadge('${uid}')">🗑 Remove Badge</button>
+    </div>`;
+  document.getElementById('user-modal').classList.add('open');
+}
+function closeModal(e) {
+  if (e.target.classList.contains('mo')) e.target.classList.remove('open');
+}
+async function banUser(uid,name) { if(!confirm(`Ban ${name}?`))return; await fbPatch(`users/${uid}`,{banned:true}); showToast(`🚫 ${name} banned`); loadUsers(); document.getElementById('user-modal').classList.remove('open'); }
+async function unbanUser(uid,name) { await fbPatch(`users/${uid}`,{banned:false,reports:0}); showToast(`✅ ${name} unbanned`); loadUsers(); document.getElementById('user-modal').classList.remove('open'); }
+async function giveBadge(uid,val) { await fbPatch(`users/${uid}`,{special_badge:val,badge:val}); showToast(`🏅 ${val} given`); loadUsers(); document.getElementById('user-modal').classList.remove('open'); }
+async function removeBadge(uid) { await fbPatch(`users/${uid}`,{special_badge:''}); showToast('Badge removed'); loadUsers(); document.getElementById('user-modal').classList.remove('open'); }
+async function setFamily(uid,name) { await fbPatch(`users/${uid}`,{special_user:true,badge:'🌟 Official SeatSwap Family'}); showToast(`🌟 ${name} set as Family`); loadUsers(); document.getElementById('user-modal').classList.remove('open'); }
+
+// ════════════════════════════════════════════
+//  ADMIN — SWAPS
+// ════════════════════════════════════════════
+async function loadAdminSwaps() {
+  if (!isAdmin) return;
+  const el = document.getElementById('admin-swaps-list');
+  const swaps = await fbGet('swaps') || {};
+  const list = Object.entries(swaps).filter(([k,v])=>v.status==='active');
+  if (!list.length) { el.innerHTML = '<div class="empty"><div class="empty-icon">🔄</div><p>No active swaps</p></div>'; return; }
+  el.innerHTML = list.map(([sid,s]) => `
+    <div class="sc">
+      <div class="sc-hdr">
+        <div>
+          <div class="sc-name">${esc(s.name)} <span style="color:var(--muted);font-size:11px">ID:${s.user_id}</span></div>
+          <div class="sc-badge">Train ${esc(s.train)} · ${esc(s.coach)}</div>
+        </div>
+        <div class="sc-time">${timeAgo(s.ts)}</div>
+      </div>
+      <div class="sc-row"><span class="sc-lbl">Has</span><span>Seat <b>${esc(s.cur_seat)}</b> (${esc(s.cur_berth)})</span></div>
+      <div class="sc-row"><span class="sc-lbl">Wants</span><span>Seat <b>${esc(s.want_seat)}</b> (${esc(s.want_berth)})</span></div>
+      <button class="btn btn-danger btn-sm" style="margin-top:8px" onclick="adminDelSwap('${sid}')">🗑 Delete</button>
+    </div>`).join('');
+}
+async function adminDelSwap(sid) { if(!confirm('Delete this swap?'))return; await fbDel(`swaps/${sid}`); showToast('✅ Deleted'); loadAdminSwaps(); }
+
+// ════════════════════════════════════════════
+//  ADMIN — FEEDBACKS
+// ════════════════════════════════════════════
+async function loadFeedbacks() {
+  if (!isAdmin) return;
+  const el = document.getElementById('fbs-list');
+  const fbs = await fbGet('feedbacks') || {};
+  const list = Object.entries(fbs).sort((a,b)=>b[0]>a[0]?1:-1).slice(0,20);
+  if (!list.length) { el.innerHTML = '<div class="empty"><div class="empty-icon">💬</div><p>No feedbacks yet</p></div>'; return; }
+  el.innerHTML = list.map(([fid,f]) => `
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start">
+        <div>
+          <div style="font-weight:600;font-size:13px">${esc(f.name||'?')}</div>
+          <div style="font-size:11px;color:var(--muted)">@${esc(f.username||'—')} · ${esc(f.ts||'')}</div>
+        </div>
+        <button class="btn btn-danger btn-sm" onclick="delFeedback('${fid}')">🗑</button>
+      </div>
+      <div style="font-size:13px;background:var(--surface);padding:9px;border-radius:8px;margin-top:8px;line-height:1.5">${esc(f.message||'')}</div>
+    </div>`).join('');
+}
+async function delFeedback(fid) { await fbDel(`feedbacks/${fid}`); showToast('Deleted'); loadFeedbacks(); }
+
+// ════════════════════════════════════════════
+//  BROADCAST
+// ════════════════════════════════════════════
+// ════════════════════════════════════════════
+//  MANUAL ADMIN OVERRIDE (for testing)
+// ════════════════════════════════════════════
+async function checkAndSetAdmin() {
+  // Re-check admin status from Firebase
+  try {
+    const adminData = await fbGet('admin_ids');
+    if (adminData) {
+      const ids = Array.isArray(adminData) ? adminData : Object.values(adminData);
+      if (ids.map(Number).includes(ME)) {
+        isAdmin = true;
+        document.getElementById('role-badge').textContent = '🛠 Admin';
+        document.getElementById('role-badge').classList.add('admin');
+        injectAdminTabs();
+        showToast('✅ Admin access granted!');
+        return true;
+      }
+    }
+  } catch(e) {}
+  showToast(`Your ID: ${ME} — not in admin list`);
+  return false;
+}
+
+async function broadcast() {
+  const msg = document.getElementById('bc-msg')?.value?.trim();
+  if (!msg) { showToast('⚠️ Write a message first'); return; }
+  await fbSet(`broadcasts/${Date.now()}`, { message:msg, sent_by:ME, ts:new Date().toLocaleString(), status:'pending' });
+  document.getElementById('bc-msg').value = '';
+  showToast('✅ Broadcast saved! Bot will send it.');
+}
+
+// ════════════════════════════════════════════
+//  INIT
+// ════════════════════════════════════════════
+loadHomeStats();
 </script>
 </body>
 </html>
